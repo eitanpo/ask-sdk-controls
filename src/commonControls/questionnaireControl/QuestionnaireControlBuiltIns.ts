@@ -1,3 +1,5 @@
+import fs from 'fs';
+import { join } from 'path';
 import { ControlInput } from '../../controls/ControlInput';
 import { DeepRequired } from '../../utils/DeepRequired';
 import { QuestionnaireControl, QuestionnaireControlAPLProps } from './QuestionnaireControl';
@@ -39,10 +41,22 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
         enabled: true,
 
         askOneQuestionAct: (control: QuestionnaireControl, input: ControlInput) => {
-            return {
+            const aplContent = {
                 document: questionnaireDocumentGenerator(control, input),
                 dataSource: questionnaireDataSourceGenerator(control, input),
             };
+
+            const doc =
+                JSON.stringify(aplContent.document, undefined, 2) +
+                '\n\n----------------\n\n' +
+                JSON.stringify(aplContent.dataSource, undefined, 2);
+
+            const docPath: string = join(process.cwd(), 'apl.json');
+            fs.writeFileSync(docPath, doc);
+            // const dataPath: string = join(process.cwd(), 'aplDataSource.json');
+            // fs.writeFileSync(dataPath, JSON.stringify(aplContent.dataSource, undefined, 2));
+
+            return aplContent;
         },
         // requestValue: {
         //     document: questionnaireDocumentGenerator(),
@@ -63,20 +77,35 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
      */
     export function questionnaireDataSourceGenerator(control: QuestionnaireControl, input: ControlInput) {
         const content = control.getQuestionnaireContent(input);
+
         const questions = [];
         for (const [index, question] of content.questions.entries()) {
-            const currentChoiceIndex = Object.keys(control.state.value).includes(question.id)
-                ? control.getChoiceIndexById(content, control.state.value[question.id].answerId)
-                : -1;
+            // const currentChoiceIndex = Object.keys(control.state.value).includes(question.id)
+            //     ? control.getChoiceIndexById(content, control.state.value[question.id].answerId)
+            //     : -1;
+
+            const choiceButtons = [];
+            for (const [idx, choice] of content.choices.entries()) {
+                choiceButtons.push({
+                    type: 'ChoiceRadio',
+                    questionId: question.id,
+                    choiceId: choice.id,
+                    text: '✔',
+                    index: idx,
+                    textColor: '#00FF00', // TODO: wire up colors.
+                });
+            }
 
             questions.push({
-                ...control.getQuestionContentById(question.id, input),
+                questionId: question.id,
                 renderedIndex: `${index < 10 ? '&#32;&#32;' : ''}${index}.`, // add some spaces to small number for alignment.
                 type: 'question',
-                text: control.getQuestionContentById(question.id, input).promptFragment,
-                
-                selectedBtnIndex: currentChoiceIndex,
+                text: question.promptFragment,
+                selectedChoiceId: control.state.value[question.id]?.choiceId ?? '-1',
+                choices: choiceButtons,
             });
+
+            //...control.getQuestionContentById(question.id, input),
         }
 
         // TODO: refactor rendered choices to appear in dataSource
@@ -123,17 +152,6 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
      */
     export function questionnaireDocumentGenerator(control: QuestionnaireControl, input: ControlInput) {
         const content = control.getQuestionnaireContent(input);
-        const radioButtons = [];
-        for (const [idx, choice] of content.choices.entries()) {
-            radioButtons.push({
-                type: 'ChoiceRadio',
-                questionId: '${id}', // id will be defined by the question item.
-                text: '✔',
-                index: idx,
-                textColor: '#00FF00', // TODO: wire up colors.
-            });
-        }
-
         return {
             type: 'APL',
             version: '1.4',
@@ -144,6 +162,12 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 },
             ],
             resources: [
+                {
+                    description: 'ControlId',
+                    string: {
+                        controlId: control.id,
+                    },
+                },
                 {
                     description: 'RadioButton dimensions',
                     dimensions: {
@@ -370,33 +394,37 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                     },
                 },
                 ChoiceRadio: {
-                    parameters: ['index', 'color'],
+                    parameters: ['questionId', 'choiceId', 'color', 'text', 'index'], //<<< ['index', 'color'],
                     item: {
                         type: 'AlexaRadioButton',
                         spacing: '40px',
                         radioButtonColor: '${color}',
                         height: '60',
                         width: '60',
-                        isChecked: '${selectedBtnIndex==index}',
+                        isChecked: '${selectedChoiceId==choiceId}', //<<  '${selectedBtnIndex==index}'
                         onPress: ['${primaryAction}'],
                         primaryAction: {
                             type: 'Sequential',
                             commands: [
                                 {
                                     type: 'SetValue',
-                                    property: 'selectedBtnIndex',
-                                    value: '${index}',
+                                    property: 'selectedChoiceId',
+                                    value: '${choiceId}',
                                 },
                                 {
                                     type: 'SendEvent',
-                                    arguments: ['${textListData.controlId}', '${ordinal}'],
+                                    arguments: ['@controlId', '${questionId}', '${choiceId}'],
                                 },
                             ],
                         },
+                        text: '${text}',
                     },
                 },
                 question: {
-                    parameters: ['questionId', 'renderedIndex', 'text', 'selectedBtnIndex'],
+                    parameters: ['id', 'renderedIndex', 'text', 'selectedChoiceId', 'choices'],
+                    bind: {
+                        questionId: '${id}',
+                    },
                     item: {
                         type: 'Container',
                         direction: 'row',
@@ -411,7 +439,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                 type: 'Container',
                                 direction: 'row',
                                 spacing: '50px',
-                                items: radioButtons, //todo: take from dataSource rather than dynamically creating? is there official way to to instantiate n items from data?
+                                items: '${choices}', //todo: take from dataSource rather than dynamically creating? is there official way to to instantiate n items from data?
 
                                 // Example of expected style.
                                 // items: [

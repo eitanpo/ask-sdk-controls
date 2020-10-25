@@ -28,13 +28,13 @@ export namespace MultipleLists {
                     questionnaireData: {
                         questions: [
                             {
-                                id: 'cough',
-                                targets: ['cough'],
+                                id: 'headache',
+                                targets: ['headache'],
                                 promptFragment: 'Do you frequently have a headache?',
                             },
                             {
-                                id: 'headache',
-                                targets: ['headache'],
+                                id: 'cough',
+                                targets: ['cough'],
                                 promptFragment: 'Have you been coughing a lot?',
                             },
                         ],

@@ -12,7 +12,7 @@
  */
 
 import { getSupportedInterfaces } from 'ask-sdk-core';
-import { IntentRequest } from 'ask-sdk-model';
+import { IntentRequest, interfaces } from 'ask-sdk-model';
 import i18next from 'i18next';
 import _ from 'lodash';
 import { Strings as $ } from '../../constants/Strings';
@@ -105,34 +105,6 @@ export interface QuestionnaireControlProps extends ControlProps {
      *  - a yes/no question will be asked, e.g. 'was that [answer a]?'.
      */
     answerConfirmationRequired?: boolean | ((this: QuestionnaireControl, input: ControlInput) => boolean);
-
-    // /**
-    //  * Map questionId to a prompt fragment.
-    //  *
-    //  * Purpose:
-    //  *  - Many prompts will need to 'render the question' as part of the prompt. This prop
-    //  *    provides a single place to define mapping for use in various prompts.
-    //  *
-    //  * Usage:
-    //  *  - Default prompts make use of this mapping.
-    //  *  - Custom prompts may also refer to this mapping if it is convenient.
-    //  *  - If a common mapping isn't sufficient, each prompt can be overridden individually.
-    //  */
-    // questionRenderer: (this: QuestionnaireControl, questionId: string, input: ControlInput) => string;
-
-    // /**
-    //  * Map choiceId to a prompt fragment.
-    //  *
-    //  * Purpose:
-    //  *  - Many prompts will need to 'render the choice' as part of the prompt. This prop
-    //  *    provides a single place to define mapping for use in various prompts.
-    //  *
-    //  * Usage:
-    //  *  - Default prompts make use of this mapping.
-    //  *  - Custom prompts may also refer to this mapping if it is convenient.
-    //  *  - If a common mapping isn't sufficient, each prompt can be overridden individually.
-    //  */
-    // choiceRenderer?: (this: QuestionnaireControl, choiceId: string, input: ControlInput) => string;
 
     /**
      * Props to customize the prompt fragments that will be added by
@@ -322,7 +294,7 @@ export class QuestionnaireControlAPLProps {
 
 export type QuestionnaireUserAnswers = {
     [index: string]: {
-        answerId: string;
+        choiceId: string;
         atRiskOfMisunderstanding: boolean;
     };
 };
@@ -487,6 +459,11 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             canHandle: this.isPositiveAnswerWithoutValue,
             handle: this.handlePositiveAnswerWithoutValue,
         },
+        {
+            name: 'std::AplChoiceSelected',
+            canHandle: this.isAplChoiceSelected,
+            handle: this.handleAplChoiceSelected,
+        },
     ];
 
     // const builtInCanHandle: boolean =
@@ -572,6 +549,28 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const positiveAnswer = content.choiceForYesUtterance ?? content.choices[0];
 
         this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
+        return;
+    }
+
+    private isAplChoiceSelected(input: ControlInput): boolean {
+        try {
+            okIf(InputUtil.isAPLUserEventWithMatchingControlId(input, this.id));
+            return true;
+        } catch (e) {
+            return falseIfGuardFailed(e);
+        }
+    }
+
+    private handleAplChoiceSelected(input: ControlInput, resultBuilder: ControlResultBuilder) {
+        // The SendEvent provides arguments: [controlId, questionId, choiceId]
+        const questionId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![1];
+        const choiceId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![2];
+
+        // const content = this.getQuestionnaireContent(input);
+        // const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
+        // const positiveAnswer = content.choiceForYesUtterance ?? content.choices[0];
+
+        this.updateAnswer(questionId, choiceId, input, resultBuilder);
         return;
     }
 
@@ -747,35 +746,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const propValue = this.props.questionnaireData;
         return typeof propValue === 'function' ? (propValue as any).call(this, input) : propValue;
     }
-
-    // /**
-    //  * Produces the simple rendered form for each questionId and choiceId.
-    //  *
-    //  * These simple rendered forms are used in default prompts/apl and can also be used in
-    //  * custom prompts/apl if convenient.
-    //  *
-    //  * The rendered forms are created by calling props.questionRenderer() and props.choiceRenderer().
-    //  *
-    //  * @param input
-    //  */
-    // public getRenderedQuestionnaireContent(input: ControlInput): RenderedQuestionnaireContent {
-    //     const content = this.getQuestionnaireContent(input);
-
-    //     const renderedQuestions: { [key: string]: string } = {};
-    //     content.questions.forEach((question) => {
-    //         renderedQuestions[question.id] = this.props.questionRenderer.call(this, question.id, input);
-    //     });
-
-    //     const renderedChoices: { [key: string]: string } = {};
-    //     content.choices.forEach((choice) => {
-    //         renderedChoices[choice.id] = this.props.choiceRenderer.call(this, choice.id, input);
-    //     });
-
-    //     return {
-    //         questions: renderedQuestions,
-    //         choices: renderedChoices,
-    //     };
-    // }
 
     private evaluateAPLPropNewStyle(prop: AplPropNewStyle, input: ControlInput): AplContent {
         return typeof prop === 'function' ? (prop as AplContentFunc).call(this, this, input) : prop;
@@ -955,13 +925,13 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return this.props.interactionModel.targets;
     }
 
-    public async updateAnswer(
+    public updateAnswer(
         questionId: string,
-        answer: string,
+        choiceId: string,
         input: ControlInput,
         resultBuilder: ControlResultBuilder,
-    ): Promise<void> {
-        this.state.value[questionId] = { answerId: answer, atRiskOfMisunderstanding: false };
+    ): void {
+        this.state.value[questionId] = { choiceId: choiceId, atRiskOfMisunderstanding: false };
     }
 
     public getQuestionContentById(questionId: string, input: ControlInput): DeepRequired<Question> {
