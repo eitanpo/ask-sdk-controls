@@ -39,7 +39,7 @@ export namespace TwoListsIM {
             name: 'FrequencyAnswer',
             values: [
                 {
-                    id: 'oftenHave',
+                    id: 'often',
                     name: {
                         value: 'often',
                         synonyms: [
@@ -78,7 +78,7 @@ export namespace TwoListsIM {
                     },
                 },
                 {
-                    id: 'rarelyHave',
+                    id: 'rarely',
                     name: {
                         value: 'rarely',
                         synonyms: [
@@ -106,7 +106,6 @@ export namespace TwoListsIM {
                             'never have',
                             'never suffer',
                             'never suffer from',
-                            'never',
                         ],
                     },
                 },

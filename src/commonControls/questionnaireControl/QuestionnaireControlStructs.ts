@@ -61,20 +61,7 @@ export interface Question {
      *   by this prop.
      *
      */
-    targets?: string[];
-
-    /**
-     * Action-slot values associated with this question.
-     *
-     * Default: []
-     * Note that phrases such as 'I want', 'I need' will be captured automatically by the
-     * GeneralControlIntent.head slot. More specific action phrases such as 'to
-     * purchase' should be configured here to allow parsing of user inputs like 'U: yes I
-     * want to purchase sunglasses'.
-     *
-     * See `targets` prop for complete discussion.
-     */
-    actions?: string[];
+    targets: string[];
 
     /**
      * Rendered form of the question for use in prompts.
