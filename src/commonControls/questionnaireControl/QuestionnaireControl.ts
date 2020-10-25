@@ -41,7 +41,7 @@ import { DeepRequired } from '../../utils/DeepRequired';
 import { InputUtil } from '../../utils/InputUtil';
 import { falseIfGuardFailed, okIf } from '../../utils/Predicates';
 import { QuestionnaireControlAPLPropsBuiltIns } from './QuestionnaireControlBuiltIns';
-import { Question, QuestionnaireContent, RenderedQuestionnaireContent } from './QuestionnaireControlStructs';
+import { Question, QuestionnaireContent } from './QuestionnaireControlStructs';
 import { AskQuestionAct } from './QuestionnaireControlSystemActs';
 
 /**
@@ -106,33 +106,33 @@ export interface QuestionnaireControlProps extends ControlProps {
      */
     answerConfirmationRequired?: boolean | ((this: QuestionnaireControl, input: ControlInput) => boolean);
 
-    /**
-     * Map questionId to a prompt fragment.
-     *
-     * Purpose:
-     *  - Many prompts will need to 'render the question' as part of the prompt. This prop
-     *    provides a single place to define mapping for use in many prompts.
-     *
-     * Usage:
-     *  - Default prompts make use of this mapping.
-     *  - Custom prompts may also refer to this mapping if it is convenient.
-     *  - If a common mapping isn't sufficient, each prompt can be overridden individually.
-     */
-    questionRenderer: (this: QuestionnaireControl, questionId: string, input: ControlInput) => string;
+    // /**
+    //  * Map questionId to a prompt fragment.
+    //  *
+    //  * Purpose:
+    //  *  - Many prompts will need to 'render the question' as part of the prompt. This prop
+    //  *    provides a single place to define mapping for use in various prompts.
+    //  *
+    //  * Usage:
+    //  *  - Default prompts make use of this mapping.
+    //  *  - Custom prompts may also refer to this mapping if it is convenient.
+    //  *  - If a common mapping isn't sufficient, each prompt can be overridden individually.
+    //  */
+    // questionRenderer: (this: QuestionnaireControl, questionId: string, input: ControlInput) => string;
 
-    /**
-     * Map choiceId to a prompt fragment.
-     *
-     * Purpose:
-     *  - Many prompts will need to 'render the choice' as part of the prompt. This prop
-     *    provides a single place to define mapping for use in many prompts.
-     *
-     * Usage:
-     *  - Default prompts make use of this mapping.
-     *  - Custom prompts may also refer to this mapping if it is convenient.
-     *  - If a common mapping isn't sufficient, each prompt can be overridden individually.
-     */
-    choiceRenderer?: (this: QuestionnaireControl, choiceId: string, input: ControlInput) => string;
+    // /**
+    //  * Map choiceId to a prompt fragment.
+    //  *
+    //  * Purpose:
+    //  *  - Many prompts will need to 'render the choice' as part of the prompt. This prop
+    //  *    provides a single place to define mapping for use in various prompts.
+    //  *
+    //  * Usage:
+    //  *  - Default prompts make use of this mapping.
+    //  *  - Custom prompts may also refer to this mapping if it is convenient.
+    //  *  - If a common mapping isn't sufficient, each prompt can be overridden individually.
+    //  */
+    // choiceRenderer?: (this: QuestionnaireControl, choiceId: string, input: ControlInput) => string;
 
     /**
      * Props to customize the prompt fragments that will be added by
@@ -409,10 +409,11 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
                 },
                 targets: [$.Target.Choice, $.Target.It],
             },
-            questionRenderer: (id: string) => id,
-            choiceRenderer: (id: string) => id,
+            // questionRenderer: (id: string) => id,
+            // choiceRenderer: (id: string) => id,
             prompts: {
-                askQuestionAct: (act) => act.payload.renderedContent.questions[act.payload.questionId],
+                askQuestionAct: (act: AskQuestionAct, input: ControlInput) =>
+                    act.control.getQuestionContentById(act.payload.questionId, input).promptFragment,
 
                 // confirmValue: (act) =>
                 //     i18next.t('LIST_CONTROL_DEFAULT_PROMPT_CONFIRM_VALUE', { value: act.payload.value }),
@@ -442,7 +443,8 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
                 //     }),
             },
             reprompts: {
-                askQuestionAct: (act) => act.payload.renderedContent.questions[act.payload.questionId],
+                askQuestionAct: (act: AskQuestionAct, input: ControlInput) =>
+                    act.control.getQuestionContentById(act.payload.questionId, input).promptFragment,
                 // confirmValue: (act) =>
                 //     i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_CONFIRM_VALUE', { value: act.payload.value }),
                 // valueConfirmed: i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_VALUE_AFFIRMED'),
@@ -667,16 +669,15 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     private askLineItemQuestion(input: ControlInput, resultBuilder: ControlResultBuilder): void {
         const content = this.getQuestionnaireContent(input);
-        const renderedContent = this.getRenderedQuestionnaireContent(input);
+        // const renderedContent = this.getRenderedQuestionnaireContent(input);
         this.state.focusQuestionId = content.questions[0].id;
-        
-        const renderedQuestion = this.props.questionRenderer.call(this, this.state.focusQuestionId, input);
+
+        // const renderedQuestion = this.props.questionRenderer.call(this, this.state.focusQuestionId, input);
 
         const initiativeAct = new AskQuestionAct(this, {
             questionnaireContent: content,
-            renderedContent,
             answers: this.state.value,
-            questionId: this.state.focusQuestionId,            
+            questionId: this.state.focusQuestionId,
         });
         this.state.activeInitiative = { actName: initiativeAct.constructor.name };
         resultBuilder.addAct(initiativeAct);
@@ -747,19 +748,34 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return typeof propValue === 'function' ? (propValue as any).call(this, input) : propValue;
     }
 
-    public getRenderedQuestionnaireContent(input: ControlInput): RenderedQuestionnaireContent {
-        const content = this.getQuestionnaireContent(input);
-        
-        
-        const renderedQuestions = _.fromPairs(content.questions.map(question=>[question.id, question]));
-        const renderedChoices = _.fromPairs(content.choices.map(choice=>[choice.id, choice]));
+    // /**
+    //  * Produces the simple rendered form for each questionId and choiceId.
+    //  *
+    //  * These simple rendered forms are used in default prompts/apl and can also be used in
+    //  * custom prompts/apl if convenient.
+    //  *
+    //  * The rendered forms are created by calling props.questionRenderer() and props.choiceRenderer().
+    //  *
+    //  * @param input
+    //  */
+    // public getRenderedQuestionnaireContent(input: ControlInput): RenderedQuestionnaireContent {
+    //     const content = this.getQuestionnaireContent(input);
 
+    //     const renderedQuestions: { [key: string]: string } = {};
+    //     content.questions.forEach((question) => {
+    //         renderedQuestions[question.id] = this.props.questionRenderer.call(this, question.id, input);
+    //     });
 
-        return {
-            questions: renderedQuestions,
-            choices: renderedChoices
-        }
-    }
+    //     const renderedChoices: { [key: string]: string } = {};
+    //     content.choices.forEach((choice) => {
+    //         renderedChoices[choice.id] = this.props.choiceRenderer.call(this, choice.id, input);
+    //     });
+
+    //     return {
+    //         questions: renderedQuestions,
+    //         choices: renderedChoices,
+    //     };
+    // }
 
     private evaluateAPLPropNewStyle(prop: AplPropNewStyle, input: ControlInput): AplContent {
         return typeof prop === 'function' ? (prop as AplContentFunc).call(this, this, input) : prop;

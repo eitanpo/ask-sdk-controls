@@ -1,7 +1,6 @@
 import { ControlInput } from '../../controls/ControlInput';
 import { DeepRequired } from '../../utils/DeepRequired';
 import { QuestionnaireControl, QuestionnaireControlAPLProps } from './QuestionnaireControl';
-import { QuestionnaireContent } from './QuestionnaireControlStructs';
 
 /*
  * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -40,10 +39,9 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
         enabled: true,
 
         askOneQuestionAct: (control: QuestionnaireControl, input: ControlInput) => {
-            const content = control.getQuestionnaireContent(input);
             return {
-                document: questionnaireDocumentGenerator(content),
-                dataSource: questionnaireDataSourceGenerator(content, control),
+                document: questionnaireDocumentGenerator(control, input),
+                dataSource: questionnaireDataSourceGenerator(control, input),
             };
         },
         // requestValue: {
@@ -63,41 +61,25 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
      * See
      * https://developer.amazon.com/en-US/docs/alexa/alexa-presentation-language/apl-data-source.html
      */
-    export function questionnaireDataSourceGenerator(
-        content: QuestionnaireContent,
-        control: QuestionnaireControl,
-    ) {
-        // return (act: PresentQuestionnaireAndAskOneQuestionAct) => {
-        //     const itemsArray: QuestionnaireChoice[] = [];
-        //     for (const choice of act.allChoices) {
-        //         itemsArray.push({
-        //             primaryText:
-        //                 typeof slotIdMapper === 'function' ? slotIdMapper(choice) : slotIdMapper[choice],
-        //         });
-        //     }
-
-        //     return {
-        //         textListData: {
-        //             controlId: act.control.id,
-        //             headerTitle: i18next.t('LIST_CONTROL_DEFAULT_APL_HEADER_TITLE'),
-        //             items: itemsArray,
-        //         },
-        //     };
-        // };
-
+    export function questionnaireDataSourceGenerator(control: QuestionnaireControl, input: ControlInput) {
+        const content = control.getQuestionnaireContent(input);
         const questions = [];
-        for (const [idx, question] of content.questions.entries()) {
+        for (const [index, question] of content.questions.entries()) {
             const currentChoiceIndex = Object.keys(control.state.value).includes(question.id)
                 ? control.getChoiceIndexById(content, control.state.value[question.id].answerId)
                 : -1;
 
             questions.push({
-                idx: `${idx < 10 ? '&#32;&#32;' : ''}${idx}.`, // add some spaces to small number for alignment.
+                ...control.getQuestionContentById(question.id, input),
+                renderedIndex: `${index < 10 ? '&#32;&#32;' : ''}${index}.`, // add some spaces to small number for alignment.
                 type: 'question',
-                text: question.text ?? question.id,
+                text: control.getQuestionContentById(question.id, input).promptFragment,
+                
                 selectedBtnIndex: currentChoiceIndex,
             });
         }
+
+        // TODO: refactor rendered choices to appear in dataSource
 
         return {
             wrapper: {
@@ -128,67 +110,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
         //                 type: 'question',
         //                 text: 'Symptom2',
         //                 selectedBtnIndex: 1,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;3.',
-        //                 type: 'question',
-        //                 text: 'Symptom3',
-        //                 selectedBtnIndex: 2,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;4.',
-        //                 type: 'question',
-        //                 text: 'Symptom4',
-        //                 selectedBtnIndex: 1,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;5.',
-        //                 type: 'question',
-        //                 text: 'Symptom5',
-        //                 selectedBtnIndex: 0,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;6.',
-        //                 type: 'question',
-        //                 text: 'Symptom6',
-        //                 selectedBtnIndex: 1,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;7.',
-        //                 type: 'question',
-        //                 text: 'Symptom7',
-        //                 selectedBtnIndex: 2,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;8.',
-        //                 type: 'question',
-        //                 text: 'Symptom8',
-        //                 selectedBtnIndex: 1,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;9.',
-        //                 type: 'question',
-        //                 text: 'Symptom9',
-        //                 selectedBtnIndex: 1,
-        //             },
-        //             {
-        //                 idx: '10.',
-        //                 type: 'question',
-        //                 text: 'Symptom10',
-        //                 selectedBtnIndex: 0,
-        //             },
-        //             {
-        //                 idx: '11.',
-        //                 type: 'question',
-        //                 text: 'Symptom11',
-        //                 selectedBtnIndex: 0,
-        //             },
-        //             {
-        //                 idx: '12.',
-        //                 type: 'question',
-        //                 text: 'Symptom12',
-        //                 selectedBtnIndex: 0,
-        //             },
+        //             }
         //         ],
         //     },
         // };
@@ -199,14 +121,16 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
      *
      * Default: Questionnaire items shown as line items with radio buttons for selecting answer
      */
-    export function questionnaireDocumentGenerator(content: QuestionnaireContent) {
+    export function questionnaireDocumentGenerator(control: QuestionnaireControl, input: ControlInput) {
+        const content = control.getQuestionnaireContent(input);
         const radioButtons = [];
         for (const [idx, choice] of content.choices.entries()) {
             radioButtons.push({
                 type: 'ChoiceRadio',
-                text: choice.text ?? choice.id,
+                questionId: '${id}', // id will be defined by the question item.
+                text: '✔',
                 index: idx,
-                textColor: choice.textColor ?? '#00FF00',
+                textColor: '#00FF00', // TODO: wire up colors.
             });
         }
 
@@ -464,16 +388,15 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                     value: '${index}',
                                 },
                                 {
-                                    type: 'SetValue',
-                                    property: 'selectedBtnIndex',
-                                    value: '${index}',
+                                    type: 'SendEvent',
+                                    arguments: ['${textListData.controlId}', '${ordinal}'],
                                 },
                             ],
                         },
                     },
                 },
                 question: {
-                    parameters: ['idx', 'text', 'selectedBtnIndex'],
+                    parameters: ['questionId', 'renderedIndex', 'text', 'selectedBtnIndex'],
                     item: {
                         type: 'Container',
                         direction: 'row',
@@ -482,7 +405,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                         items: [
                             {
                                 type: 'Text',
-                                text: '${idx}',
+                                text: '${renderedIndex}',
                             },
                             {
                                 type: 'Container',

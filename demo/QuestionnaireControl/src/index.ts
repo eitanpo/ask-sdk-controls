@@ -27,13 +27,25 @@ export namespace MultipleLists {
                     slotType: 'FrequencyAnswer', // todo: add filtered type.
                     questionnaireData: {
                         questions: [
-                            { id: 'cough', targets: ['cough'] },
+                            {
+                                id: 'cough',
+                                targets: ['cough'],
+                                promptFragment: 'Do you frequently have a headache?',
+                            },
                             {
                                 id: 'headache',
                                 targets: ['headache'],
+                                promptFragment: 'Have you been coughing a lot?',
                             },
                         ],
-                        choices: [{ id: 'often' }, { id: 'rarely' }], // should be consistent with ListControl. listItemIds vs choices.
+                        choices: [
+                            {
+                                id: 'often',
+                                aplColumnHeader: 'Often',
+                                promptFragment: 'often',
+                            },
+                            { id: 'rarely', aplColumnHeader: 'Infreq', promptFragment: 'infrequently' },
+                        ], // TODO: should be consistent with ListControl. listItemIds vs choices.
 
                         //These are special support so that we can offer automatic
                         //handling of YesIntent/NoIntent.
@@ -42,18 +54,18 @@ export namespace MultipleLists {
                         choiceForNoUtterance: 'rarely',
                     },
                     interactionModel: {
-                        targets: ['builtin_it', 'cough', 'headache'], // this should just be the control targets.  The question targets are in content.
+                        targets: ['builtin_it', 'healthQuestionnaire'], // this should just be the control targets.  The question targets are in content.
                     },
-                    questionRenderer: (questionId: string) =>
-                        (({
-                            headache: 'Do you frequently have a headache?',
-                            cough: 'Have you been coughing a lot?',
-                        } as any)[questionId]),
-                    choiceRenderer: (choiceId: string) =>
-                        (({
-                            often: 'often or always',
-                            rarely: 'rarely or never',
-                        } as any)[choiceId]),
+                    // questionRenderer: (questionId: string) =>
+                    //     (({
+                    //         headache: 'Do you frequently have a headache?',
+                    //         cough: 'Have you been coughing a lot?',
+                    //     } as any)[questionId]),
+                    // choiceRenderer: (choiceId: string) =>
+                    //     (({
+                    //         often: 'often or always',
+                    //         rarely: 'rarely or never',
+                    //     } as any)[choiceId]),
                 }),
             );
 

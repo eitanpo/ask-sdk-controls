@@ -75,6 +75,15 @@ export interface Question {
      * See `targets` prop for complete discussion.
      */
     actions?: string[];
+
+    /**
+     * Rendered form of the question for use in prompts.
+     * 
+     * - Rendered form should be a complete sentence with leading uppercase and trailing question-mark.
+     * 
+     * Examples: 'Do you like cats?', 'How do you rate the service?'
+     */
+    promptFragment: string
 }
 
 export interface Choice {
@@ -82,6 +91,21 @@ export interface Choice {
      * Identifier
      */
     id: string;
+
+    /**
+     * A short (1-3 character) form to use as APL column headers.
+     */
+    aplColumnHeader: string;
+
+    /**
+     * Rendered form of the choice for use in prompts.
+     * 
+     * - Rendered form should be a short phrase without punctuation.
+     * 
+     * Examples: 'like', 'do not like'
+     * Example prompt:  'Did you say [like]?'
+     */
+    promptFragment: string;
 }
 
 export interface QuestionnaireContent {
@@ -150,21 +174,21 @@ export interface QuestionnaireContent {
     choiceForNoUtterance?: string;
 }
 
-export interface RenderedQuestionnaireContent {
-    /**
-     * Simple rendering for each question, by ID.
-     * 
-     * Used in default prompts/APL and available for use in custom prompts.
-     */
-    questions: {[key: string]: string};
+// export interface RenderedQuestionnaireContent {
+//     /**
+//      * Simple rendering for each question, by ID.
+//      * 
+//      * Used in default prompts/APL and available for use in custom prompts.
+//      */
+//     questions: {[key: string]: string};
 
-    /**
-     * Simple rendering for each choice, by ID.
-     * 
-     * Used in default prompts/APL and available for use in custom prompts.
-     */
-    choices: {[key: string]: string};
-}
+//     /**
+//      * Simple rendering for each choice, by ID.
+//      * 
+//      * Used in default prompts/APL and available for use in custom prompts.
+//      */
+//     choices: {[key: string]: string};
+// }
 
 /**
  * Indicates the user's answer to a question and whether there is a perceived risk of misunderstanding.
