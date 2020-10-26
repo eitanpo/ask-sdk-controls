@@ -108,13 +108,16 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
             //...control.getQuestionContentById(question.id, input),
         }
 
-        // TODO: refactor rendered choices to appear in dataSource
 
+        const focusIndex =
+            control.state.focusQuestionId !== undefined
+                ? control.getQuestionIndexById(content, control.state.focusQuestionId)
+                : 0;
         return {
             wrapper: {
                 metadata: {
                     title: 'What symptoms do you have?',
-                    focusIndex: control.state.focusQuestionId,
+                    focusIndex,
                 },
                 itemData: questions,
             },

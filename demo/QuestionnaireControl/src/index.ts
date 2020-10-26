@@ -37,6 +37,31 @@ export namespace MultipleLists {
                                 targets: ['cough'],
                                 promptFragment: 'Have you been coughing a lot?',
                             },
+                            {
+                                id: 'troubleSleeping',
+                                targets: ['troubleSleep'],
+                                promptFragment: 'Do you have trouble sleeping?',
+                            },
+                            {
+                                id: 'soreToe',
+                                targets: ['soreToe'],
+                                promptFragment: 'Do you have a sore toe?',
+                            },
+                            {
+                                id: 'soreFoot',
+                                targets: ['soreFoot'],
+                                promptFragment: 'Do you have a sore foot?',
+                            },
+                            {
+                                id: 'soreLeg',
+                                targets: ['soreLeg'],
+                                promptFragment: 'Do you have a sore leg?',
+                            },
+                            {
+                                id: 'soreKnee',
+                                targets: ['soreKnee'],
+                                promptFragment: 'Do you have a sore knee?',
+                            },
                         ],
                         choices: [
                             {

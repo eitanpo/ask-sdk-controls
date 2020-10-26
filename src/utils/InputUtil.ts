@@ -18,7 +18,7 @@ import { AmazonIntent } from '../intents/AmazonBuiltInIntent';
 import { GeneralControlIntent, unpackGeneralControlIntent } from '../intents/GeneralControlIntent';
 import {
     SingleValueControlIntent,
-    unpackSingleValueControlIntent,
+    unpackSingleValueControlIntent
 } from '../intents/SingleValueControlIntent';
 
 /**
@@ -196,6 +196,14 @@ export namespace InputUtil {
      */
     export function targetIsMatch(target: string | undefined, targetIds: string[]): boolean {
         return target !== undefined && targetIds.includes(target);
+    }
+
+     /**
+     * Test if the feedback is defined.
+     * @param target - Target slot value ID
+     */
+    export function targetIsDefined(target: string | undefined): boolean {
+        return target !== undefined;
     }
 
     /**
