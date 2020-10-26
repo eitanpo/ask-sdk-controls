@@ -93,6 +93,16 @@ export interface Choice {
      * Example prompt:  'Did you say [like]?'
      */
     promptFragment: string;
+
+    /**
+     * Text-character to display when selected
+     */
+    selectedCharacter?: string;
+
+    /**
+     * Text-character to display when not selected
+     */
+    unselectedCharacter?: string;
 }
 
 export interface QuestionnaireContent {

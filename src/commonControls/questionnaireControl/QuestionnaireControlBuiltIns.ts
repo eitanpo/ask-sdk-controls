@@ -109,7 +109,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                     type: 'ChoiceRadio',
                     questionId: question.id,
                     choiceId: choice.id,
-                    text: '✔',
+                    text: choice.selectedCharacter ?? '✔',
                     index: idx,
                     textColor: '#00FF00', // TODO: wire up colors.
                     width: '@columnWidth',

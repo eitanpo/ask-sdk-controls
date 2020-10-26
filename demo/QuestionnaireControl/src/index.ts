@@ -1,6 +1,6 @@
 import { SkillBuilders } from 'ask-sdk-core';
 import { Control } from '../../..//src/controls/Control';
-import { QuestionnaireControl, QuestionnaireControlState } from '../../../src/commonControls/questionnaireControl/QuestionnaireControl';
+import { QuestionnaireControl } from '../../../src/commonControls/questionnaireControl/QuestionnaireControl';
 import { ControlManager } from '../../../src/controls/ControlManager';
 import { ControlHandler } from '../../../src/runtime/ControlHandler';
 import { DemoRootControl } from '../../Common/src/DemoRootControl';
@@ -66,10 +66,21 @@ export namespace MultipleLists {
                         choices: [
                             {
                                 id: 'often',
-                                aplColumnHeader: 'Often',
+                                aplColumnHeader: 'Freq',
                                 promptFragment: 'often',
                             },
-                            { id: 'rarely', aplColumnHeader: 'Infreq', promptFragment: 'infrequently' },
+                            {
+                                id: 'rarely',
+                                aplColumnHeader: 'Infreq',
+                                promptFragment: 'infrequently',
+                                selectedCharacter: '✖',
+                            },
+                            {
+                                id: 'skip',
+                                aplColumnHeader: 'Skip',
+                                promptFragment: 'skip',
+                                selectedCharacter: '-',
+                            },
                         ], // TODO: should be consistent with ListControl. listItemIds vs choices.
 
                         //These are special support so that we can offer automatic

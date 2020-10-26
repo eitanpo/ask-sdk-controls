@@ -109,6 +109,22 @@ export namespace TwoListsIM {
                         ],
                     },
                 },
+                {
+                    id: 'skip',
+                    name: {
+                        value: 'skip',
+                        synonyms: [
+                            "don't know",
+                            'unsure',
+                            'pass',
+                            'next',
+                            "I honestly don't know",
+                            'maybe',
+                            'off and on',
+                            'from time to time',
+                        ],
+                    },
+                },
             ],
         })
 

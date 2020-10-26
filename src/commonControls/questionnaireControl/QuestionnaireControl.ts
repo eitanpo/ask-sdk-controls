@@ -571,7 +571,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const content = this.getQuestionnaireContent(input);
         const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
         const positiveAnswer =
-            content.choiceForYesUtterance !== 'dummy' ? content.choiceForYesUtterance : content.choices[0].id;
+            (content.choiceForYesUtterance !== undefined && content.choiceForYesUtterance !== 'dummy') ? content.choiceForYesUtterance : content.choices[0].id;
 
         this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
         return;
@@ -605,7 +605,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const content = this.getQuestionnaireContent(input);
         const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
         const negativeAnswer =
-            content.choiceForNoUtterance !== 'dummy' ? content.choiceForNoUtterance : content.choices[0].id;
+            (content.choiceForNoUtterance !== undefined && content.choiceForNoUtterance !== 'dummy') ? content.choiceForNoUtterance : content.choices[0].id;
 
         this.updateAnswer(question.id, negativeAnswer, input, resultBuilder);
         return;
@@ -876,7 +876,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     /**
      * Evaluate the questionnaireContent prop
      */
-    public getQuestionnaireContent(input: ControlInput): DeepRequired<QuestionnaireContent> {
+    public getQuestionnaireContent(input: ControlInput): QuestionnaireContent {
         const propValue = this.props.questionnaireData;
         const content = typeof propValue === 'function' ? propValue.call(this, input) : propValue;
 
@@ -887,7 +887,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         content.choiceForYesUtterance = content.choiceForYesUtterance ?? 'dummy';
         content.choiceForNoUtterance = content.choiceForNoUtterance ?? 'dummy';
 
-        const deepRequiredContent: DeepRequired<QuestionnaireContent> = {
+        const deepRequiredContent: QuestionnaireContent = {
             choices: content.choices,
             questions: content.questions,
             choiceForYesUtterance: content.choiceForYesUtterance ?? 'dummy',
