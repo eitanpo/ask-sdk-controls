@@ -1,6 +1,6 @@
 import { SkillBuilders } from 'ask-sdk-core';
 import { Control } from '../../..//src/controls/Control';
-import { QuestionnaireControl } from '../../../src/commonControls/questionnaireControl/QuestionnaireControl';
+import { QuestionnaireControl, QuestionnaireControlState } from '../../../src/commonControls/questionnaireControl/QuestionnaireControl';
 import { ControlManager } from '../../../src/controls/ControlManager';
 import { ControlHandler } from '../../../src/runtime/ControlHandler';
 import { DemoRootControl } from '../../Common/src/DemoRootControl';

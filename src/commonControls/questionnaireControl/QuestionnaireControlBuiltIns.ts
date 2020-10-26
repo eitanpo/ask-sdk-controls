@@ -78,6 +78,25 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
     export function questionnaireDataSourceGenerator(control: QuestionnaireControl, input: ControlInput) {
         const content = control.getQuestionnaireContent(input);
 
+        const headerItems = [];
+        for (const choice of content.choices) {
+            headerItems.push({
+                type: 'Text',
+                text: choice.aplColumnHeader,
+                textColor: '#00FF00', // TODO: wire up colors.
+                fontSize: '@myFontSize',
+                width: '@columnWidth',
+                textAlign: 'center',
+            });
+        }
+
+        const header = {
+            type: 'Container',
+            direction: 'row',
+            wrap: 'wrap',
+            items: headerItems,
+        };
+
         const questions = [];
         for (const [index, question] of content.questions.entries()) {
             // const currentChoiceIndex = Object.keys(control.state.value).includes(question.id)
@@ -93,6 +112,9 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                     text: '✔',
                     index: idx,
                     textColor: '#00FF00', // TODO: wire up colors.
+                    width: '@columnWidth',
+                    fontSize: '@myFontSize',
+                    textAlign: 'center',
                 });
             }
 
@@ -101,13 +123,13 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 renderedIndex: `${index < 10 ? '&#32;&#32;' : ''}${index}.`, // add some spaces to small number for alignment.
                 type: 'question',
                 text: question.promptFragment,
+                fontSize: '@myFontSize',
                 selectedChoiceId: control.state.value[question.id]?.choiceId ?? '-1',
                 choices: choiceButtons,
             });
 
             //...control.getQuestionContentById(question.id, input),
         }
-
 
         const focusIndex =
             control.state.focusQuestionId !== undefined
@@ -120,6 +142,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                     focusIndex,
                 },
                 itemData: questions,
+                header: header,
             },
         };
 
@@ -165,6 +188,12 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 },
             ],
             resources: [
+                {
+                    dimensions: {
+                        myFontSize: '32dp',
+                        columnWidth: '100dp',
+                    },
+                },
                 {
                     description: 'ControlId',
                     string: {
@@ -327,6 +356,14 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                             name: 'text',
                             type: 'any',
                         },
+                        {
+                            name: 'fontSize',
+                            type: 'any',
+                        },
+                        {
+                            name: 'textAlign',
+                            type: 'any',
+                        },
                     ],
                     item: {
                         type: 'TouchWrapper',
@@ -392,18 +429,18 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                 type: 'Text',
                                 text: "${isChecked ? text : '&#9675;'}",
                                 color: '${radioButtonColor}',
+                                fontSize: '${fontSize}',
+                                textAlign: '${textAlign}',
                             },
                         ],
                     },
                 },
                 ChoiceRadio: {
-                    parameters: ['questionId', 'choiceId', 'color', 'text', 'index'], //<<< ['index', 'color'],
+                    parameters: ['questionId', 'choiceId', 'color', 'text', 'index', 'textAlign'], //<<< ['index', 'color'],
                     item: {
                         type: 'AlexaRadioButton',
-                        spacing: '40px',
                         radioButtonColor: '${color}',
-                        height: '60',
-                        width: '60',
+                        height: '50',
                         isChecked: '${selectedChoiceId==choiceId}', //<<  '${selectedBtnIndex==index}'
                         onPress: ['${primaryAction}'],
                         primaryAction: {
@@ -421,10 +458,11 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                             ],
                         },
                         text: '${text}',
+                        textAlign: '${textAlign}',
                     },
                 },
                 question: {
-                    parameters: ['id', 'renderedIndex', 'text', 'selectedChoiceId', 'choices'],
+                    parameters: ['id', 'renderedIndex', 'text', 'fontSize', 'selectedChoiceId', 'choices'],
                     bind: {
                         questionId: '${id}',
                     },
@@ -434,10 +472,10 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                         alignItems: 'start',
                         justifyContent: 'start',
                         items: [
-                            {
-                                type: 'Text',
-                                text: '${renderedIndex}',
-                            },
+                            // {
+                            //     type: 'Text',
+                            //     text: '${renderedIndex}',
+                            // },
                             {
                                 type: 'Container',
                                 direction: 'row',
@@ -467,9 +505,9 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                 // ],
                             },
                             {
-                                paddingLeft: '50px',
                                 type: 'Text',
                                 text: '${text}',
+                                fontSize: '${fontSize}',
                             },
                         ],
                     },
@@ -485,11 +523,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                 type: 'Text',
                                 text: '${payload.wrapper.metadata.title}',
                             },
-                            {
-                                type: 'Text',
-                                text:
-                                    '&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;&#32;Yes No Maybe',
-                            },
+                            '${payload.wrapper.header}',
                             {
                                 type: 'ScrollView',
                                 height: '70vh',
@@ -510,8 +544,6 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                         height: '70vh',
                                         width: '100vw',
                                         id: 'textToUpdate',
-                                        paddingLeft: '@marginHorizontal',
-                                        paddingRight: '@marginHorizontal',
                                         items: '${payload.wrapper.itemData}',
                                     },
                                 ],
