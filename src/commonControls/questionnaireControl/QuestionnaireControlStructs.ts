@@ -66,11 +66,27 @@ export interface Question {
     /**
      * Rendered form of the question for use in prompts.
      * 
-     * - Rendered form should be a complete sentence with leading uppercase and trailing question-mark.
+     * - This prompt should be a complete sentence with leading uppercase and trailing question-mark.
      * 
      * Examples: 'Do you like cats?', 'How do you rate the service?'
      */
-    promptFragment: string
+    prompt: string,
+
+    /**
+     * Short-form rendering of the question for use in prompts.
+     * 
+     * This prompt should be a phrase without leading uppercase and no punctuation.
+     * 
+     * Example: 
+     *  When providing implicit confirmation, the short form of the question may be used:
+     * ```
+     *  questionPrompt: "Do you like cats?"
+     *  questionPromptShortForm: "cats"
+     * ```
+     * So that a prompt can be constructed like "OK, yes for cats.  <next question>"
+     * 
+     */
+    promptShortForm: string
 }
 
 export interface Choice {
@@ -92,7 +108,7 @@ export interface Choice {
      * Examples: 'like', 'do not like'
      * Example prompt:  'Did you say [like]?'
      */
-    promptFragment: string;
+    prompt: string;
 
     /**
      * Text-character to display when selected

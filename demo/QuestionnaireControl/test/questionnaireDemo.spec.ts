@@ -12,7 +12,15 @@ import { expect } from 'chai';
  * permissions and limitations under the License.
  */
 import { suite, test } from 'mocha';
-import { ControlHandler, SkillInvoker, TestInput, testTurn, waitForDebugger } from '../../../src';
+import {
+    ControlHandler,
+    IntentBuilder,
+    SingleValueControlIntent,
+    SkillInvoker,
+    TestInput,
+    testTurn,
+    waitForDebugger,
+} from '../../../src';
 import { MultipleLists } from '../src';
 
 waitForDebugger();
@@ -21,10 +29,43 @@ suite('all', () => {
     test.only('Questionnaire Demo', async () => {
         const requestHandler = new ControlHandler(new MultipleLists.DemoControlManager());
         const invoker = new SkillInvoker(requestHandler);
-        const response = await testTurn(invoker, 'U: __', TestInput.launchRequest(), 'A: Welcome. hi');
+        const response1 = await testTurn(
+            invoker,
+            'U: __',
+            TestInput.launchRequest(),
+            'A: Welcome. Do you frequently have a headache?',
+        );
 
-        expect(response.directive).lengthOf(1);
-        expect(response.directive![0].type).equal('Alexa.Presentation.APL.RenderDocument'); // APL present.
+        expect(response1.directive).lengthOf(1);
+        expect(response1.directive![0].type).equal('Alexa.Presentation.APL.RenderDocument'); // APL present.
+
+        await testTurn(
+            invoker,
+            'U: yes',
+            TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
+            'A: OK. Have you been coughing a lot?',
+        );
+
+        await testTurn(
+            invoker,
+            'U: I cough all the time',
+            TestInput.of(
+                SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
+            ),
+            'A: OK, often for cough. Do you have trouble sleeping?',
+        );
+
+        await testTurn(
+            invoker,
+            'U: no, I never cough',
+            TestInput.of(
+                SingleValueControlIntent.of('FrequencyAnswer', {
+                    target: 'cough',
+                    FrequencyAnswer: 'rarely',
+                }),
+            ),
+            'A: OK, infrequently for cough. Do you have trouble sleeping?',
+        );
 
         // await testTurn(
         //     invoker,

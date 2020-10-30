@@ -122,7 +122,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 questionId: question.id,
                 renderedIndex: `${index < 10 ? '&#32;&#32;' : ''}${index}.`, // add some spaces to small number for alignment.
                 type: 'question',
-                text: question.promptFragment,
+                text: question.prompt,
                 fontSize: '@myFontSize',
                 selectedChoiceId: control.state.value[question.id]?.choiceId ?? '-1',
                 choices: choiceButtons,
