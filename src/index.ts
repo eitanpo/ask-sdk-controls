@@ -22,7 +22,7 @@ export {
     DateControlProps,
     DateControlState,
     DateControlValidations,
-    DateValidationFunction,
+    DateValidationFailReasonCode,
 } from './commonControls/DateControl';
 export {
     alexaDateFormatToDate,
@@ -33,18 +33,28 @@ export {
     getEndDateOfRange,
     getMonth,
     getStartDateOfRange,
+    getUTCDate,
     getYear,
 } from './commonControls/dateRangeControl/DateHelper';
 export {
+    DateControlTarget,
+    DateRange,
     DateRangeControl,
+    DateRangeControlActionProps,
+    DateRangeControlInteractionModelProps,
+    DateRangeControlPromptProps,
     DateRangeControlProps,
     DateRangeControlState,
+    DateRangeControlTargetProps,
     DateRangeControlValidations,
+    DateRangeValidationFailReasonCode,
     TargetCategory,
 } from './commonControls/dateRangeControl/DateRangeControl';
+export { defaultI18nResources } from './commonControls/LanguageStrings';
 export {
     ListControl,
     ListControlActionProps,
+    ListControlAPLProps,
     ListControlInteractionModelProps,
     ListControlPromptProps,
     ListControlProps,
@@ -52,7 +62,9 @@ export {
 } from './commonControls/listControl/ListControl';
 export { ListControlAPLPropsBuiltIns } from './commonControls/listControl/ListControlAPL';
 export {
+    NumberConfirmationRequireFunction,
     NumberControl,
+    NumberControlActionProps,
     NumberControlInteractionModelProps,
     NumberControlPromptsProps,
     NumberControlProps,
@@ -60,7 +72,9 @@ export {
 } from './commonControls/NumberControl';
 export {
     ValueControl,
+    ValueControlActionProps,
     ValueControlInteractionModelProps,
+    ValueControlPromptProps,
     ValueControlProps,
     ValueControlState,
 } from './commonControls/ValueControl';
@@ -71,28 +85,59 @@ export {
     ContainerControlProps,
     ContainerControlState,
 } from './controls/ContainerControl';
-export { Control, ControlProps, ControlInputHandlingProps } from './controls/Control';
+export { Control, ControlInputHandlingProps, ControlProps, ControlState } from './controls/Control';
 export { ControlInput } from './controls/ControlInput';
-export { ControlManager, renderActsInSequence } from './controls/ControlManager';
+export { ControlManager, ControlManagerProps, renderActsInSequence } from './controls/ControlManager';
 export { ControlResult, ControlResultBuilder } from './controls/ControlResult';
 export {
     DynamicContainerControl,
     DynamicContainerControlState,
     DynamicControlSpecification,
 } from './controls/DynamicContainerControl';
+export { IContainerControl, isContainerControl } from './controls/interfaces/IContainerControl';
+export { IControl } from './controls/interfaces/IControl';
+export { IControlInput } from './controls/interfaces/IControlInput';
+export { IControlManager } from './controls/interfaces/IControlManager';
+export { IControlResponse } from './controls/interfaces/IControlResponse';
+export { IControlResult } from './controls/interfaces/IControlResult';
+export { IControlResultBuilder } from './controls/interfaces/IControlResultBuilder';
+export {
+    ControlStateDiagramming,
+    implementsControlStateDiagramming,
+} from './controls/mixins/ControlStateDiagramming';
+export {
+    implementsInteractionModelContributor,
+    InteractionModelContributor,
+} from './controls/mixins/InteractionModelContributor';
+export { StateValidationFunction, ValidationFailure } from './controls/Validation';
 export { AmazonIntent } from './intents/AmazonBuiltInIntent';
 export { AmazonBuiltInSlotType } from './intents/AmazonBuiltInSlotType';
 export { BaseControlIntent } from './intents/BaseControlIntent';
 export {
+    ActionAndTask,
+    areConjunctionIntentSlotsValid,
+    ConjunctionControlIntent,
+    ConjunctionControlIntentSlots,
+    generateActionTaskPairs,
+    unpackConjunctionControlIntent,
+} from './intents/ConjunctionControlIntent';
+export {
     DateRangeControlIntent,
     DateRangeControlIntentSlots,
+    hasOneOrMoreValues,
     unpackDateRangeControlIntent,
+    validateDateRangeControlIntentSlots,
 } from './intents/DateRangeControlIntent';
 export {
     GeneralControlIntent,
     GeneralControlIntentSlots,
     unpackGeneralControlIntent,
 } from './intents/GeneralControlIntent';
+export {
+    OrdinalControlIntent,
+    OrdinalControlIntentSlots,
+    unpackOrdinalControlIntent,
+} from './intents/OrdinalControlIntent';
 export {
     SingleValueControlIntent,
     SingleValueControlIntentSlots,
@@ -115,19 +160,12 @@ export { ControlResponseBuilder } from './responseGeneration/ControlResponseBuil
 export { ControlHandler } from './runtime/ControlHandler';
 export * from './systemActs/ContentActs';
 export * from './systemActs/InitiativeActs';
-export {
-    InvalidValuePayload,
-    RequestChangedValueByListPayload,
-    RequestChangedValuePayload,
-    RequestValueByListPayload,
-    RequestValuePayload,
-    ValueChangedPayload,
-    ValueSetPayload,
-} from './systemActs/PayloadTypes';
+export * from './systemActs/PayloadTypes';
 export { ISystemAct, SystemAct } from './systemActs/SystemAct';
 export { matchIfDefined, mismatch, moveArrayItem, randomlyPick } from './utils/ArrayUtils';
 export { StringOrList, StringOrTrue } from './utils/BasicTypes';
 export { generateControlTreeTextDiagram } from './utils/ControlTreeVisualization';
+export { evaluateCustomHandleFuncs, findControlById } from './utils/ControlUtils';
 export { visitControls } from './utils/ControlVisitor';
 export { DeepRequired } from './utils/DeepRequired';
 export { throwIf, throwIfUndefined } from './utils/ErrorUtils';
@@ -143,11 +181,11 @@ export {
 } from './utils/IntentUtils';
 export { failIf, falseIfGuardFailed, GuardFailed, okIf, StateConsistencyError } from './utils/Predicates';
 export { requestToString } from './utils/RequestUtils';
-export { SkillInvoker } from './utils/testSupport/SkillInvoker';
+export { SkillInvoker, TestResponseObject } from './utils/testSupport/SkillInvoker';
 export { wrapRequestHandlerAsSkill } from './utils/testSupport/SkillWrapper';
 export {
-    findControlById,
     findControlByProperty,
+    findControlInTreeById,
     simpleInvoke,
     SkillTester,
     testE2E,
@@ -155,4 +193,3 @@ export {
     testTurn,
     waitForDebugger,
 } from './utils/testSupport/TestingUtils';
-export { evaluateCustomHandleFuncs, logIfBothTrue } from './utils/ControlUtils';

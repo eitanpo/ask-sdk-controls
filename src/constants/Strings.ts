@@ -30,6 +30,7 @@ export namespace Strings {
         Set = 'builtin_set',
         Change = 'builtin_change',
         Select = 'builtin_select',
+        Complete = 'builtin_complete',
         None = 'builtin_none',
     }
 

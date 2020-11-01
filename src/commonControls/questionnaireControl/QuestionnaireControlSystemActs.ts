@@ -40,6 +40,7 @@ export class ConfirmAnswerToQuestion extends InitiativeAct {
     }
 
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
+        // TODO:lowPri: we could perhaps have a default of "Was that [choice]?"
         throw new Error(
             'this.render() is not implemented. Either override or perform rendering in Control.render()',
         );
@@ -98,6 +99,41 @@ export class QuestionAnsweredAct extends ContentAct {
     }
 
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
+        // TODO:lowPri: we could perhaps have a default of "OK."
+        throw new Error(
+            'this.render() is not implemented. Either override or perform rendering in Control.render()',
+        );
+    }
+}
+
+export class QuestionnaireCompletedAct extends ContentAct {
+    render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
+        
+        // TODO:lowPri: we could perhaps have a default of "OK."
+        throw new Error(
+            'this.render() is not implemented. Either override or perform rendering in Control.render()',
+        );
+    }
+}
+
+
+/**
+ * Payload for InvalidValueAct
+ */
+export interface QuestionnaireCompletionRejectedPayload {
+    reasonCode?: string;
+    renderedReason?: string;
+}
+
+export class QuestionnaireCompletionRejectedAct extends ContentAct {
+    payload: QuestionnaireCompletionRejectedPayload;
+    constructor(control: Control, payload: QuestionnaireCompletionRejectedPayload) {
+        super(control);
+        this.payload = payload;
+    }
+    
+    render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
+        
         throw new Error(
             'this.render() is not implemented. Either override or perform rendering in Control.render()',
         );

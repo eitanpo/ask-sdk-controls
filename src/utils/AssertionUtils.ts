@@ -1,7 +1,7 @@
 /**
  * Assertion, with Typescript 3.7 asserts to convey the information to compiler.
- * @param condition
- * @param message
+ * @param condition - condition
+ * @param message - message
  */
 export function assert(condition: boolean, message?: string): asserts condition {
     if (!condition) {

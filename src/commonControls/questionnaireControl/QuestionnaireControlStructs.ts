@@ -83,7 +83,7 @@ export interface Question {
      *  questionPrompt: "Do you like cats?"
      *  questionPromptShortForm: "cats"
      * ```
-     * So that a prompt can be constructed like "OK, yes for cats.  <next question>"
+     * So that a prompt can be constructed like "OK, yes for cats.  [next question]"
      * 
      */
     promptShortForm: string

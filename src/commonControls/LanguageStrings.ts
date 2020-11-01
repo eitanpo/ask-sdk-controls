@@ -908,6 +908,47 @@ export const defaultI18nResources: Resource = {
                             ],
                         },
                     },
+                    {
+                        id: $.Action.Select,
+                        name: {
+                            value: 'select',
+                            synonyms: [
+                                'select',
+                                'choose',
+                                'take',
+                                'pick',
+                                'want',
+                                'need',
+                                'go with',
+                                'be fine with',
+                                'going to go with',
+                                'gonna pick',
+                                'gonna go with',
+                                'be taking',
+                            ],
+                        },
+                    },
+                    {
+                        id: $.Action.Complete,
+                        name: {
+                            value: 'complete',
+                            synonyms: [
+                                'am done',
+                                'can be done',
+                                'am complete',
+                                `don't have anything else`,
+                                'nothing further',
+                                "that's it",
+                                'all done',
+                                'no more',
+                                'submit',
+                                'nothing else',
+                                'got nothing else',
+                                'got nothing more',
+                                'not nothing further'
+                            ],
+                        },
+                    },
                 ],
             },
 

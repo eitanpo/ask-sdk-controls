@@ -203,7 +203,7 @@ export class RequestChangedValueByListAct extends InitiativeAct {
 /**
  * An initiative act that asks the user if a value is correct.
  *
- * Default rendering (en-US): "Was that {value}?" for both prompt & reprompt
+ * Default rendering (en-US): "Was that [value]?" for both prompt & reprompt
  */
 //TODO:i18n
 export class ConfirmValueAct<T> extends InitiativeAct {
@@ -222,7 +222,7 @@ export class ConfirmValueAct<T> extends InitiativeAct {
 /**
  * An initiative act that defines literal prompt and reprompt fragments.
  *
- * Default rendering: "{this.payload.promptFragment}?" for both prompt & reprompt 
+ * Default rendering: "[this.payload.promptFragment]?" for both prompt & reprompt 
  *
  * Usage:
  *  * Use LiteralInitiativeAct only in simple situations where it would be annoying
@@ -249,7 +249,7 @@ export class LiteralInitiativeAct extends InitiativeAct {
 /**
  * An initiative act that suggests a specific value with a asks yes/no question.
  *
- * Default (en-US): "Did you perhaps mean ${this.payload.value}?" for both prompt and reprompt 
+ * Default (en-US): "Did you perhaps mean [this.payload.value]?" for both prompt and reprompt 
  */
 //TODO:i18n
 export class SuggestValueAct<T> extends InitiativeAct {

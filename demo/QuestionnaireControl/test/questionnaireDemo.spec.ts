@@ -14,6 +14,7 @@ import { expect } from 'chai';
 import { suite, test } from 'mocha';
 import {
     ControlHandler,
+    GeneralControlIntent,
     IntentBuilder,
     SingleValueControlIntent,
     SkillInvoker,
@@ -55,6 +56,7 @@ suite('all', () => {
             'A: OK, often for cough. Do you have trouble sleeping?',
         );
 
+        // going back to change an answer.
         await testTurn(
             invoker,
             'U: no, I never cough',
@@ -67,12 +69,12 @@ suite('all', () => {
             'A: OK, infrequently for cough. Do you have trouble sleeping?',
         );
 
-        // await testTurn(
-        //     invoker,
-        //     'U: cat',
-        //     TestInput.of(SingleValueControlIntent.of('PetSpecies', { PetSpecies: 'cat' })),
-        //     'A: OK, cat. What is your selection? Some suggestions are labrador or persian.',
-        // );
+        await testTurn(
+            invoker,
+            "U: I'm done",
+            TestInput.of(GeneralControlIntent.of({ action:  'complete' })),
+            'A: OK.',
+        );
 
         // await testTurn(
         //     invoker,

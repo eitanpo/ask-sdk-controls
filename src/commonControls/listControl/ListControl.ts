@@ -21,7 +21,7 @@ import { ControlAPL } from '../../controls/ControlAPL';
 import { ControlInput } from '../../controls/ControlInput';
 import { ControlResultBuilder } from '../../controls/ControlResult';
 import { InteractionModelContributor } from '../../controls/mixins/InteractionModelContributor';
-import { ValidationResult } from '../../controls/ValidationResult';
+import { StateValidationFunction, ValidationFailure } from '../../controls/Validation';
 import { AmazonBuiltInSlotType } from '../../intents/AmazonBuiltInSlotType';
 import { GeneralControlIntent, unpackGeneralControlIntent } from '../../intents/GeneralControlIntent';
 import { OrdinalControlIntent, unpackOrdinalControlIntent } from '../../intents/OrdinalControlIntent';
@@ -50,7 +50,7 @@ import {
 } from '../../systemActs/InitiativeActs';
 import { SystemAct } from '../../systemActs/SystemAct';
 import { StringOrList } from '../../utils/BasicTypes';
-import { evaluateCustomHandleFuncs, logIfBothTrue } from '../../utils/ControlUtils';
+import { evaluateCustomHandleFuncs, _logIfBothTrue } from '../../utils/ControlUtils';
 import { DeepRequired } from '../../utils/DeepRequired';
 import { InputUtil } from '../../utils/InputUtil';
 import { falseIfGuardFailed, okIf, StateConsistencyError } from '../../utils/Predicates';
@@ -89,7 +89,7 @@ export interface ListControlProps extends ControlProps {
      * - Validation functions return either `true` or a `ValidationResult` to
      *   describe what validation failed.
      */
-    validation?: SlotValidationFunction | SlotValidationFunction[];
+    validation?: StateValidationFunction<ListControlState> | Array<StateValidationFunction<ListControlState>>;
 
     /**
      * List of slot-value IDs that will be presented to the user as a list.
@@ -157,14 +157,6 @@ export interface ListControlProps extends ControlProps {
      */
     apl?: ListControlAPLProps;
 }
-
-/**
- * ListControl validation function
- */
-export type SlotValidationFunction = (
-    state: ListControlState,
-    input: ControlInput,
-) => true | ValidationResult;
 
 /**
  * Mapping of action slot values to the behaviors that this control supports.
@@ -568,7 +560,7 @@ export class ListControl extends Control implements InteractionModelContributor 
             this.isOrdinalScreenEvent(input) ||
             this.isOrdinalSelection(input);
 
-        logIfBothTrue(customCanHandle, builtInCanHandle);
+        _logIfBothTrue(customCanHandle, builtInCanHandle);
         return customCanHandle || builtInCanHandle;
     }
 
@@ -967,7 +959,7 @@ export class ListControl extends Control implements InteractionModelContributor 
         resultBuilder: ControlResultBuilder,
         elicitationAction: string,
     ): void {
-        const validationResult: true | ValidationResult = this.validate(input);
+        const validationResult: true | ValidationFailure = this.validate(input);
         if (validationResult === true) {
             if (elicitationAction === $.Action.Change) {
                 // if elicitationAction == 'change', then the previousValue must be defined.
@@ -1008,11 +1000,12 @@ export class ListControl extends Control implements InteractionModelContributor 
         return;
     }
 
-    private validate(input: ControlInput): true | ValidationResult {
-        const listOfValidationFunc: SlotValidationFunction[] =
+    //TODO: delete in favor of common evaluateValidationProp
+    private validate(input: ControlInput): true | ValidationFailure {
+        const listOfValidationFunc: Array<StateValidationFunction<ListControlState>> =
             typeof this.props.validation === 'function' ? [this.props.validation] : this.props.validation;
         for (const validationFunction of listOfValidationFunc) {
-            const validationResult: true | ValidationResult = validationFunction(this.state, input);
+            const validationResult: true | ValidationFailure = validationFunction(this.state, input);
             if (validationResult !== true) {
                 log.debug(
                     `ListControl.validate(): validation failed. Reason: ${JSON.stringify(
@@ -1210,6 +1203,7 @@ export class ListControl extends Control implements InteractionModelContributor 
             );
         }
 
+        // TODO: review why this is done different to set/change
         if (this.props.interactionModel.actions.set.includes($.Action.Select)) {
             generator.addValuesToSlotType(
                 SharedSlotType.ACTION,

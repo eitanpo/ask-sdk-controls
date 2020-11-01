@@ -27,7 +27,7 @@ import {
 import { ControlInput } from '../../controls/ControlInput';
 import { ControlResultBuilder } from '../../controls/ControlResult';
 import { InteractionModelContributor } from '../../controls/mixins/InteractionModelContributor';
-import { ValidationResult } from '../../controls/ValidationResult';
+import { evaluateValidationProp, StateValidationFunction } from '../../controls/Validation';
 import { GeneralControlIntent, unpackGeneralControlIntent } from '../../intents/GeneralControlIntent';
 import {
     SingleValueControlIntent,
@@ -45,7 +45,12 @@ import { InputUtil } from '../../utils/InputUtil';
 import { falseIfGuardFailed, okIf } from '../../utils/Predicates';
 import { QuestionnaireControlAPLPropsBuiltIns } from './QuestionnaireControlBuiltIns';
 import { Question, QuestionnaireContent } from './QuestionnaireControlStructs';
-import { AskQuestionAct, QuestionAnsweredAct } from './QuestionnaireControlSystemActs';
+import {
+    AskQuestionAct,
+    QuestionAnsweredAct,
+    QuestionnaireCompletedAct,
+    QuestionnaireCompletionRejectedAct,
+} from './QuestionnaireControlSystemActs';
 
 /**
  * Future feature ideas:
@@ -80,17 +85,6 @@ export interface QuestionnaireControlProps extends ControlProps {
     slotType: string;
 
     /**
-     * Determine if the questionnaire is considered 'sufficiently complete'.
-     *
-     * Default: `true`, i.e. any amount of answers is acceptable.
-     *
-     * Usage:
-     * - Validation functions return either `true` or a `ValidationResult` to
-     *   describe what validation failed.
-     */
-    completion?: QuestionnaireCompleteFunction;
-
-    /**
      * Determines if the Control must obtain a value.
      *
      * If `true`:
@@ -98,6 +92,18 @@ export interface QuestionnaireControlProps extends ControlProps {
      *  - the control will take the initiative when given the opportunity.
      */
     required?: boolean | ((this: QuestionnaireControl, input: ControlInput) => boolean);
+
+    /**
+     * Determine if the questionnaire is considered valid, i.e. has no input errors and
+     * is considered 'sufficiently complete' for the purposes of the Skill.
+     *
+     * Default: `true`, i.e. no validation and user can 'be done' whenever they wish.
+     *
+     * Usage:
+     * - Validation functions return either `true` or a `ValidationResult` to
+     *   describe what validation failed.
+     */
+    valid?: StateValidationFunction<QuestionnaireControlState>;
 
     /**
      * Whether the Control has to obtain explicit confirmation of an answer.
@@ -139,18 +145,6 @@ export interface QuestionnaireControlProps extends ControlProps {
 }
 
 /**
- * Function that determines if a questionnaire is considered "acceptably complete".
- *
- * @returns - true if the questionnaire is acceptably complete. otherwise, an object
- * describing the reason it is not considered complete.
- */
-export type QuestionnaireCompleteFunction = (
-    this: QuestionnaireControl,
-    state: QuestionnaireControlState,
-    input: ControlInput,
-) => true | ValidationResult;
-
-/**
  * Mapping of action slot values to the behaviors that this control supports.
  *
  * Behavior:
@@ -171,6 +165,13 @@ export interface QuestionnaireControlActionProps {
      * Default ['builtin_change']
      */
     change?: string[];
+
+    /**
+     * Action slot value IDs that are associated with the "complete questionnaire" capability.
+     *
+     * Default ['builtin_complete']
+     */
+    complete?: string[];
 }
 
 /**
@@ -329,6 +330,11 @@ export class QuestionnaireControlState implements ControlState {
      * Which questionId is active, aka in focus.
      */
     focusQuestionId?: string;
+
+    /**
+     * Whether the user has explicitly completed the questionnaire.
+     */
+    explicitlyComplete: boolean;
 }
 
 /**
@@ -377,13 +383,12 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             required: true,
             answerConfirmationRequired: false,
 
-            completion: () => {
-                return { reasonCode: 'todo' };
-            }, //TODO: implement default of allQuestionsAnswered.
+            valid: () => true, //TODO: also implement a builtin for "all questions answered".
             interactionModel: {
                 actions: {
                     set: [$.Action.Set, $.Action.Select],
                     change: [$.Action.Change],
+                    complete: [$.Action.Complete],
                 },
                 targets: [$.Target.Choice, $.Target.It],
             },
@@ -505,6 +510,11 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             canHandle: this.isSpecificAnswerByTouch,
             handle: this.handleSpecificAnswerByTouch,
         },
+        {
+            name: 'Explicitly complete by voice (builtin)',
+            canHandle: this.isCompletionRequestByVoice,
+            handle: this.handleCompletionRequest,
+        },
     ];
 
     // tsDoc - see Control
@@ -512,7 +522,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const stdHandlers = this.standardInputHandlers;
         const customHandlers = this.props.inputHandling.customHandlingFuncs ?? [];
 
-        let matches = [];
+        const matches = [];
         for (const handler of stdHandlers.concat(customHandlers)) {
             if (await handler.canHandle.call(this, input)) {
                 matches.push(handler);
@@ -767,8 +777,8 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         this.updateAnswer(questionId, choiceId, input, resultBuilder);
         resultBuilder.addAct(
             new QuestionAnsweredAct(this, {
-                questionId: questionId,
-                choiceId: choiceId,
+                questionId,
+                choiceId,
                 answeredWithExplicitValue: false,
                 mentionedQuestion: false,
                 renderedChoice: content.choices[choiceIndex].prompt,
@@ -777,6 +787,35 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             }),
         );
 
+        return;
+    }
+
+    private isCompletionRequestByVoice(input: ControlInput): boolean {
+        try {
+            okIf(InputUtil.isIntent(input, GeneralControlIntent.name));
+            const { feedback, action, target } = unpackGeneralControlIntent(
+                (input.request as IntentRequest).intent,
+            );
+            okIf(InputUtil.targetIsMatchOrUndefined(target, this.props.interactionModel.targets));
+            okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
+            okIf(InputUtil.actionIsMatch(action, this.props.interactionModel.actions.complete));
+            return true;
+        } catch (e) {
+            return falseIfGuardFailed(e);
+        }
+    }
+
+    private async handleCompletionRequest(input: ControlInput, resultBuilder: ControlResultBuilder) {
+        // The SendEvent provides arguments: [controlId, questionId, choiceId]
+        const content = this.getQuestionnaireContent(input);
+
+        const validationResult = await evaluateValidationProp(this.props.valid, this.state, input);
+        if (validationResult === true) {
+            this.state.explicitlyComplete = true;
+            resultBuilder.addAct(new QuestionnaireCompletedAct(this));
+        } else {
+            resultBuilder.addAct(new QuestionnaireCompletionRejectedAct(this, { ...validationResult }));
+        }
         return;
     }
 
@@ -792,7 +831,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     async canTakeInitiative(input: ControlInput): Promise<boolean> {
         const stdHandlers = this.standardInitiativeHandlers;
 
-        let matches = [];
+        const matches = [];
         for (const handler of stdHandlers) {
             if (await handler.canTakeInitiative.call(this, input)) {
                 matches.push(handler);
@@ -828,15 +867,15 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     private wantsToAskLineItemQuestion(input: ControlInput): boolean {
         const content = this.getQuestionnaireContent(input);
-        // if we haven't started and required=false, then don't start.
-        if (this.state.value === {} && this.evaluateBooleanProp(this.props.required, input) === false) {
-            return false;
+        try {
+            okIf(this.isActive(input));
+            const firstUnansweredQuestion = content.questions.find(
+                (q) => this.state.value[q.id] === undefined,
+            );
+            return firstUnansweredQuestion !== undefined;
+        } catch (e) {
+            return falseIfGuardFailed(e);
         }
-
-        //TODO: evaluate completion prop.
-
-        const firstUnansweredQuestion = content.questions.find((q) => this.state.value[q.id] === undefined);
-        return firstUnansweredQuestion !== undefined;
     }
 
     private askLineItemQuestion(input: ControlInput, resultBuilder: ControlResultBuilder): void {
@@ -1024,7 +1063,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         input: ControlInput,
         resultBuilder: ControlResultBuilder,
     ): void {
-        this.state.value[questionId] = { choiceId: choiceId };
+        this.state.value[questionId] = { choiceId };
     }
 
     public getQuestionContentById(questionId: string, input: ControlInput): DeepRequired<Question> {
@@ -1046,5 +1085,20 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const idx = content.questions.findIndex((question) => question.id === questionId);
         assert(idx >= 0, `Not found. answerId=${questionId}`);
         return idx;
+    }
+
+    /**
+     * Determine if the control is idle and should not take initiative.
+     * @param input
+     */
+    private isActive(input: ControlInput) {
+        // if we haven't started and required=false, then don't start.
+        if (this.state.value === {} && this.evaluateBooleanProp(this.props.required, input) === false) {
+            return false;
+        }
+        if (this.state.explicitlyComplete) {
+            return false;
+        }
+        return true;
     }
 }

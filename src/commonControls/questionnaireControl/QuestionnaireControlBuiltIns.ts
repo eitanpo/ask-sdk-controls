@@ -142,7 +142,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                     focusIndex,
                 },
                 itemData: questions,
-                header: header,
+                header,
             },
         };
 
@@ -178,6 +178,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
      */
     export function questionnaireDocumentGenerator(control: QuestionnaireControl, input: ControlInput) {
         const content = control.getQuestionnaireContent(input);
+
         return {
             type: 'APL',
             version: '1.4',
@@ -196,6 +197,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 },
                 {
                     description: 'ControlId',
+                    // eslint-disable-next-line id-blacklist
                     string: {
                         controlId: control.id,
                     },
