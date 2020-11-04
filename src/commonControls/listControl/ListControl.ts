@@ -94,7 +94,7 @@ export interface ListControlProps extends ControlProps {
     /**
      * List of slot-value IDs that will be presented to the user as a list.
      */
-    listItemIDs: string[] | ((input: ControlInput) => string[]);
+    listItemIDs: string[] | ((input: ControlInput) => string[]); // TODO: change to choices? simpler & match up with act payloads.
 
     /**
      * The maximum number of items spoken per turn.
@@ -112,6 +112,8 @@ export interface ListControlProps extends ControlProps {
 
     /**
      * Whether the Control has to obtain explicit confirmation of the value.
+     *
+     * Default: false
      *
      * If `true`:
      *  - the Control will take initiative to explicitly confirm the value with a yes/no
@@ -194,7 +196,7 @@ export class ListControlInteractionModelProps {
      * Default: `['builtin_it']`
      *
      * Usage:
-     * - If this prop is defined, it replaces the default; it is not additive
+     * - If this prop is defined, it replaces the default; it is not additive to
      *   the defaults.  To add an additional target to the defaults, copy the
      *   defaults and amend.
      * - A control can be associated with many target-slot-values, eg ['date',
@@ -419,8 +421,11 @@ export class ListControl extends Control implements InteractionModelContributor 
 
     private rawProps: ListControlProps;
     private props: DeepRequired<ListControlProps>;
-    private handleFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void;
-    private initiativeFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void;
+    private handleFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>;
+    private initiativeFunc?: (
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ) => void | Promise<void>;
 
     constructor(props: ListControlProps) {
         super(props.id);
@@ -568,7 +573,7 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
 
         await this.handleFunc(input, resultBuilder);
-        if (resultBuilder.hasInitiativeAct() !== true && this.canTakeInitiative(input) === true) {
+        if (resultBuilder.hasInitiativeAct() !== true && (await this.canTakeInitiative(input)) === true) {
             await this.takeInitiative(input, resultBuilder);
         }
     }
@@ -591,10 +596,13 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
     }
 
-    private handleSetWithValue(input: ControlInput, resultBuilder: ControlResultBuilder) {
+    private async handleSetWithValue(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const { valueStr, erMatch } = InputUtil.getValueResolution(input);
         this.setValue(valueStr, erMatch);
-        this.validateAndAddActs(input, resultBuilder, $.Action.Set);
+        await this.validateAndAddActs(input, resultBuilder, $.Action.Set);
         return;
     }
 
@@ -637,10 +645,13 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
     }
 
-    private handleChangeWithValue(input: ControlInput, resultBuilder: ControlResultBuilder): void {
+    private async handleChangeWithValue(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const { valueStr, erMatch } = InputUtil.getValueResolution(input);
         this.setValue(valueStr, erMatch);
-        this.validateAndAddActs(input, resultBuilder, $.Action.Change);
+        await this.validateAndAddActs(input, resultBuilder, $.Action.Change);
         return;
     }
 
@@ -688,10 +699,10 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
     }
 
-    private handleBareValue(input: ControlInput, resultBuilder: ControlResultBuilder): void {
+    private async handleBareValue(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
         const { valueStr, erMatch } = InputUtil.getValueResolution(input);
         this.setValue(valueStr, erMatch);
-        this.validateAndAddActs(input, resultBuilder, this.state.elicitationAction ?? $.Action.Set);
+        await this.validateAndAddActs(input, resultBuilder, this.state.elicitationAction ?? $.Action.Set);
         return;
     }
 
@@ -712,13 +723,16 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
     }
 
-    private handleMappedBareValue(input: ControlInput, resultBuilder: ControlResultBuilder): void {
+    private async handleMappedBareValue(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const intent = (input.request as IntentRequest).intent;
         const mappedValue = this.props.interactionModel.slotValueConflictExtensions.intentToValueMapper(
             intent,
         );
         this.setValue(mappedValue!, true);
-        this.validateAndAddActs(input, resultBuilder, this.state.elicitationAction ?? $.Action.Set); // default to set if user just provided value un-elicited.
+        await this.validateAndAddActs(input, resultBuilder, this.state.elicitationAction ?? $.Action.Set); // default to set if user just provided value un-elicited.
         return;
     }
 
@@ -883,10 +897,10 @@ export class ListControl extends Control implements InteractionModelContributor 
     }
 
     // tsDoc - see Control
-    canTakeInitiative(input: ControlInput): boolean {
+    async canTakeInitiative(input: ControlInput): Promise<boolean> {
         return (
             this.wantsToConfirmValue(input) ||
-            this.wantsToFixInvalidValue(input) ||
+            (await this.wantsToFixInvalidValue(input)) ||
             this.wantsToElicitValue(input)
         );
     }
@@ -899,7 +913,7 @@ export class ListControl extends Control implements InteractionModelContributor 
             log.error(errorMsg);
             throw new Error(errorMsg);
         }
-        this.initiativeFunc(input, resultBuilder);
+        await this.initiativeFunc(input, resultBuilder);
         return;
     }
 
@@ -925,16 +939,16 @@ export class ListControl extends Control implements InteractionModelContributor 
         );
     }
 
-    private wantsToFixInvalidValue(input: ControlInput): boolean {
-        if (this.state.value !== undefined && this.validate(input) !== true) {
+    private async wantsToFixInvalidValue(input: ControlInput): Promise<boolean> {
+        if (this.state.value !== undefined && (await this.validate(input)) !== true) {
             this.initiativeFunc = this.fixInvalidValue;
             return true;
         }
         return false;
     }
 
-    private fixInvalidValue(input: ControlInput, resultBuilder: ControlResultBuilder): void {
-        this.validateAndAddActs(input, resultBuilder, $.Action.Change);
+    private async fixInvalidValue(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
+        await this.validateAndAddActs(input, resultBuilder, $.Action.Change);
     }
 
     private wantsToElicitValue(input: ControlInput): boolean {
@@ -949,12 +963,12 @@ export class ListControl extends Control implements InteractionModelContributor 
         this.askElicitationQuestion(input, resultBuilder, $.Action.Set);
     }
 
-    validateAndAddActs(
+    async validateAndAddActs(
         input: ControlInput,
         resultBuilder: ControlResultBuilder,
         elicitationAction: string,
-    ): void {
-        const validationResult: true | ValidationFailure = this.validate(input);
+    ): Promise<void> {
+        const validationResult: true | ValidationFailure = await this.validate(input);
         if (validationResult === true) {
             if (elicitationAction === $.Action.Change) {
                 // if elicitationAction == 'change', then the previousValue must be defined.
@@ -995,11 +1009,12 @@ export class ListControl extends Control implements InteractionModelContributor 
         return;
     }
 
-    private validate(input: ControlInput): true | ValidationFailure {
+    //TODO: delete in favor of common evaluateValidationProp
+    private async validate(input: ControlInput): Promise<true | ValidationFailure> {
         const listOfValidationFunc: Array<StateValidationFunction<ListControlState>> =
             typeof this.props.validation === 'function' ? [this.props.validation] : this.props.validation;
         for (const validationFunction of listOfValidationFunc) {
-            const validationResult: true | ValidationFailure = validationFunction(this.state, input);
+            const validationResult: true | ValidationFailure = await validationFunction(this.state, input);
             if (validationResult !== true) {
                 log.debug(
                     `ListControl.validate(): validation failed. Reason: ${JSON.stringify(
@@ -1197,6 +1212,7 @@ export class ListControl extends Control implements InteractionModelContributor 
             );
         }
 
+        // TODO: review why this is done different to set/change
         if (this.props.interactionModel.actions.set.includes($.Action.Select)) {
             generator.addValuesToSlotType(
                 SharedSlotType.ACTION,
