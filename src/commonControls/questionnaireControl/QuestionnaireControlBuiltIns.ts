@@ -197,9 +197,8 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 },
                 {
                     description: 'ControlId',
-                    // eslint-disable-next-line id-blacklist
                     string: {
-                        controlId: control.id,
+                        controlId: 'healthScreen',
                     },
                 },
                 {
@@ -438,12 +437,12 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                     },
                 },
                 ChoiceRadio: {
-                    parameters: ['questionId', 'choiceId', 'color', 'text', 'index', 'textAlign'], //<<< ['index', 'color'],
+                    parameters: ['questionId', 'choiceId', 'color', 'text', 'index', 'textAlign'],
                     item: {
                         type: 'AlexaRadioButton',
                         radioButtonColor: '${color}',
                         height: '50',
-                        isChecked: '${selectedChoiceId==choiceId}', //<<  '${selectedBtnIndex==index}'
+                        isChecked: '${selectedChoiceId==choiceId}',
                         onPress: ['${primaryAction}'],
                         primaryAction: {
                             type: 'Sequential',
@@ -474,37 +473,11 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                         alignItems: 'start',
                         justifyContent: 'start',
                         items: [
-                            // {
-                            //     type: 'Text',
-                            //     text: '${renderedIndex}',
-                            // },
                             {
                                 type: 'Container',
                                 direction: 'row',
                                 spacing: '50px',
-                                items: '${choices}', //todo: take from dataSource rather than dynamically creating? is there official way to to instantiate n items from data?
-
-                                // Example of expected style.
-                                // items: [
-                                //     {
-                                //         type: 'ChoiceRadio',
-                                //         text: '✔',
-                                //         index: 0,
-                                //         textColor: '#00FF00',
-                                //     },
-                                //     {
-                                //         type: 'ChoiceRadio',
-                                //         text: '✖',
-                                //         index: 1,
-                                //         color: '#FF0000',
-                                //     },
-                                //     {
-                                //         type: 'ChoiceRadio',
-                                //         text: '?',
-                                //         index: 2,
-                                //         color: '#555555',
-                                //     },
-                                // ],
+                                items: '${choices}',
                             },
                             {
                                 type: 'Text',
@@ -528,7 +501,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                             '${payload.wrapper.header}',
                             {
                                 type: 'ScrollView',
-                                height: '70vh',
+                                height: '65vh',
                                 width: '100vw',
                                 checked: true,
                                 position: 'relative',
@@ -543,12 +516,27 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                                 item: [
                                     {
                                         type: 'Sequence',
-                                        height: '70vh',
+                                        height: '65vh',
                                         width: '100vw',
                                         id: 'textToUpdate',
                                         items: '${payload.wrapper.itemData}',
                                     },
                                 ],
+                            },
+                            {
+                                type: 'AlexaButton',
+                                buttonText: 'Done',
+                                buttonStyle: 'outlined',
+                                alignSelf: 'end',
+                                primaryAction: {
+                                    type: 'Sequential',
+                                    commands: [
+                                        {
+                                            type: 'SendEvent',
+                                            arguments: ['@controlId', 'completeXX'],
+                                        },
+                                    ],
+                                },
                             },
                         ],
                     },

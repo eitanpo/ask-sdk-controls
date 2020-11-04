@@ -10,6 +10,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+import { IntentRequest, interfaces } from 'ask-sdk-model';
 import {
     ContainerControl,
     ContainerControlProps,
@@ -18,6 +19,7 @@ import {
     ControlResponseBuilder,
     ControlResultBuilder,
     InputUtil,
+    LiteralContentAct,
 } from '../../../src';
 
 /**
@@ -56,7 +58,12 @@ export class DemoRootControl extends ContainerControl {
         }
 
         // otherwise delegate to children
-        return this.canHandleByChild(input);
+        if (await this.canHandleByChild(input)) {
+            return true;
+        }
+
+        this.handleFunc = this.handleFallbackEtc;
+        return true;
     }
 
     async handle(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
@@ -73,5 +80,21 @@ export class DemoRootControl extends ContainerControl {
 
     async handleSessionEnded(input: ControlInput, resultBuilder: ControlResultBuilder) {
         //nothing.
+    }
+
+    async handleFallbackEtc(input: ControlInput, resultBuilder: ControlResultBuilder) {
+        let requestType;
+        if (InputUtil.isIntent(input)) {
+            requestType = (input.request as IntentRequest).intent.name;
+        } else if (input.request.type === 'Alexa.Presentation.APL.UserEvent') {
+            requestType = '';
+            const event = input.request as interfaces.alexa.presentation.apl.UserEvent;
+            const args = (event.arguments ?? []).join(', ');
+            requestType = `APL UserEvent with params ${args}`;
+        } else {
+            requestType = 'Input of unknown type';
+        }
+
+        resultBuilder.addAct(new LiteralContentAct(this, { promptFragment: `Unhandled ${requestType}.` }));
     }
 }

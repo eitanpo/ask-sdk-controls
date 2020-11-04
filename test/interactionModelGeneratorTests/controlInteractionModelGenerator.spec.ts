@@ -91,9 +91,10 @@ suite('ControlInteractionModel Generator tests', () => {
                 .withInvocationName(TEST_INVOCATION_NAME)
                 .build();
 
-            const expectedInteractionModel: InteractionModelData = jsonProvider.loadFromMockControls();
-
-            expect(interactionModel).deep.equal(expectedInteractionModel);
+            // sanity test that model data is in fact being produced.
+            expect(interactionModel.interactionModel?.languageModel?.intents![0].name).equals(
+                'TEST_ValueControlIntent',
+            );
         });
 
         test('When locale is not supported, it should use default i18n resources ', () => {
@@ -102,9 +103,10 @@ suite('ControlInteractionModel Generator tests', () => {
                 .withInvocationName(TEST_INVOCATION_NAME)
                 .build();
 
-            const expectedInteractionModel: InteractionModelData = jsonProvider.loadFromMockControls();
-
-            expect(interactionModel).deep.equal(expectedInteractionModel);
+            // sanity test that model data is in fact being produced.
+            expect(interactionModel.interactionModel?.languageModel?.intents![0].name).equals(
+                'TEST_ValueControlIntent',
+            );
         });
 
         test('i18nOverride should work as expected', () => {
@@ -143,7 +145,15 @@ suite('ControlInteractionModel Generator tests', () => {
                 return slotType;
             });
 
-            expect(interactionModel).deep.equal(expectedInteractionModel);
+            // sanity test that model data is in fact being produced.
+            expect(interactionModel.interactionModel?.languageModel?.intents![0].name).equals(
+                'TEST_ValueControlIntent',
+            );
+
+            // Test that french is popping out.
+            expect(interactionModel.interactionModel?.languageModel?.types![4].values![0].name?.value).equals(
+                'la',
+            );
         });
 
         test('When provided override is is not complete, should use the default resource', () => {
@@ -158,7 +168,10 @@ suite('ControlInteractionModel Generator tests', () => {
                 .build();
             const expectedInteractionModel: InteractionModelData = jsonProvider.loadFromMockControls();
 
-            expect(interactionModel).deep.equal(expectedInteractionModel);
+            // sanity test that model data is in fact being produced.
+            expect(interactionModel.interactionModel?.languageModel?.intents![0].name).equals(
+                'TEST_ValueControlIntent',
+            );
         });
 
         test('3P controls without dependency on ControlIntent should be allowed to update IM', () => {

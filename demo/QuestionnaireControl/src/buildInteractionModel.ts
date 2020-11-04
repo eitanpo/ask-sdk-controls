@@ -36,6 +36,10 @@ export namespace TwoListsIM {
         .setModelConfiguration({ fallbackIntentSensitivity: { level: 'HIGH' } })
 
         .addOrMergeSlotType({
+            name: 'Maybe',
+        })
+
+        .addOrMergeSlotType({
             name: 'FrequencyAnswer',
             values: [
                 {

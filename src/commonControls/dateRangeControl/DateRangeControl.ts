@@ -489,9 +489,11 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
 
     private startDateControl: DateControl;
     private endDateControl: DateControl;
-    private handleFunc: ((input: ControlInput, resultBuilder: ControlResultBuilder) => void) | undefined;
+    private handleFunc:
+        | ((input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>)
+        | undefined;
     private takeInitiativeFunc:
-        | ((input: ControlInput, resultBuilder: ControlResultBuilder) => void)
+        | ((input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>)
         | undefined;
 
     static mergeWithDefaultProps(props: DateRangeControlProps): DeepRequired<DateRangeControlProps> {
@@ -770,7 +772,7 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         // ask DateRangeControl whether the value is ready
         if (!resultBuilder.hasInitiativeAct() && (await this.canTakeInitiative(input))) {
             if (this.takeInitiativeFunc !== undefined) {
-                this.takeInitiativeFunc(input, resultBuilder);
+                await this.takeInitiativeFunc(input, resultBuilder);
             }
         }
     }
@@ -855,7 +857,7 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
                 this.isChangeRange(input) ||
                 this.isConfirmationAffirmed(input) ||
                 this.isConfirmationDisAffirmed(input) ||
-                this.canHandleByChild(input)
+                (await this.canHandleByChild(input))
             );
         } catch (e) {
             return falseIfGuardFailed(e);
@@ -947,7 +949,10 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         }
     }
 
-    private handleTwoValueInput(input: ControlInput, resultBuilder: ControlResultBuilder): void {
+    private async handleTwoValueInput(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const intent = (input.request as IntentRequest).intent;
         const unpackedSlots = unpackDateRangeControlIntent(intent);
         const inputGroups: DateRangeControlIntentInput[] = generateDatesInputGroups(
@@ -969,8 +974,8 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
             return;
         }
         this.ackDateRangeValueChanged(resultBuilder, input);
-        if (this.wantsToCorrectRange(input)) {
-            this.correctRange(input, resultBuilder);
+        if (await this.wantsToCorrectRange(input)) {
+            await this.correctRange(input, resultBuilder);
         }
     }
 
@@ -1010,7 +1015,10 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         }
     }
 
-    private handleDateRangeInput(input: ControlInput, resultBuilder: ControlResultBuilder): void {
+    private async handleDateRangeInput(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const intent = (input.request as IntentRequest).intent;
         const { valueStr } = unpackSingleValueControlIntent(intent);
         this.setStartDate(findEdgeDateOfDateRange(valueStr, true));
@@ -1022,8 +1030,8 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
             return;
         }
         this.ackDateRangeValueChanged(resultBuilder, input);
-        if (this.wantsToCorrectRange(input)) {
-            this.correctRange(input, resultBuilder);
+        if (await this.wantsToCorrectRange(input)) {
+            await this.correctRange(input, resultBuilder);
         }
     }
 
@@ -1107,7 +1115,10 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         }
     }
 
-    private handleConfirmationAffirmed(input: ControlInput, resultBuilder: ControlResultBuilder): void {
+    private async handleConfirmationAffirmed(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         this.state.isValueConfirmed = true;
         this.state.isConfirmingRange = false;
         // If the date range is confirmed in parent
@@ -1118,8 +1129,8 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
             startDate: this.state.startDate!,
             endDate: this.state.endDate!,
         };
-        if (this.wantsToCorrectRange(input)) {
-            this.correctRange(input, resultBuilder);
+        if (await this.wantsToCorrectRange(input)) {
+            await this.correctRange(input, resultBuilder);
             return;
         }
         resultBuilder.addAct(
@@ -1212,13 +1223,13 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         }
     }
 
-    private validateDateRange(input: ControlInput): true | ValidationFailure {
+    private async validateDateRange(input: ControlInput): Promise<true | ValidationFailure> {
         const listOfValidationFunc: Array<StateValidationFunction<DateRangeControlState>> =
             typeof this.props.validation.rangeValid === 'function'
                 ? [this.props.validation.rangeValid]
                 : this.props.validation.rangeValid;
         for (const validationFunction of listOfValidationFunc) {
-            const validationResult: true | ValidationFailure = validationFunction(this.state, input);
+            const validationResult: true | ValidationFailure = await validationFunction(this.state, input);
             if (validationResult !== true) {
                 log.debug(
                     `DateRangeControl.validate(): validation failed. Reason: ${JSON.stringify(
@@ -1279,9 +1290,9 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
     async canTakeInitiative(input: ControlInput): Promise<boolean> {
         return (
             this.needsValue(input) ||
-            (await this.canTakeInitiativeByChild(input)) ||
+            await this.canTakeInitiativeByChild(input) ||
             this.isChangingRange() ||
-            this.wantsToCorrectRange(input) ||
+            await this.wantsToCorrectRange(input) ||
             this.wantsToConfirmRange(input)
         );
     }
@@ -1290,7 +1301,7 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
     async takeInitiative(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
         log.debug(`DateRangeControl[${this.id}]: takeInitiative(). Entering`);
         if (this.takeInitiativeFunc !== undefined) {
-            this.takeInitiativeFunc(input, resultBuilder);
+            await this.takeInitiativeFunc(input, resultBuilder);
         }
     }
 
@@ -1320,11 +1331,11 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         }
     }
 
-    private wantsToCorrectRange(input: ControlInput): boolean {
+    private async wantsToCorrectRange(input: ControlInput): Promise<boolean> {
         try {
             // Only fix range when range is set and there's no open question
             okIf(!this.needsValue(input) && !this.state.isChangingRange);
-            const rangeValidationResult: true | ValidationFailure = this.validateDateRange(input);
+            const rangeValidationResult: true | ValidationFailure = await this.validateDateRange(input);
             okIf(rangeValidationResult !== true);
             this.takeInitiativeFunc = this.correctRange;
             return true;
@@ -1333,8 +1344,8 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         }
     }
 
-    private correctRange(input: ControlInput, resultBuilder: ControlResultBuilder): void {
-        const rangeValidationResult: true | ValidationFailure = this.validateDateRange(input);
+    private async correctRange(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
+        const rangeValidationResult: true | ValidationFailure = await this.validateDateRange(input);
         this.state.onFocus = true;
         if (rangeValidationResult !== true) {
             const dateRange = {

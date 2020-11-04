@@ -26,9 +26,10 @@ import { MultipleLists } from '../src';
 
 waitForDebugger();
 
-suite('all', () => {
-    test.only('Questionnaire Demo', async () => {
-        const requestHandler = new ControlHandler(new MultipleLists.DemoControlManager());
+suite('questionnaire demo skill', () => {
+    test('general features', async () => {
+        const controlManager = new MultipleLists.DemoControlManager();
+        const requestHandler = new ControlHandler(controlManager);
         const invoker = new SkillInvoker(requestHandler);
         const response1 = await testTurn(
             invoker,
@@ -44,7 +45,7 @@ suite('all', () => {
             invoker,
             'U: yes',
             TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
-            'A: OK. Have you been coughing a lot?',
+            'A: Have you been coughing a lot?',
         );
 
         await testTurn(
@@ -53,7 +54,7 @@ suite('all', () => {
             TestInput.of(
                 SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
             ),
-            'A: OK, often for cough. Do you have trouble sleeping?',
+            'A: OK, often for cough. Are you happy with all answers?',
         );
 
         // going back to change an answer.
@@ -66,21 +67,87 @@ suite('all', () => {
                     FrequencyAnswer: 'rarely',
                 }),
             ),
-            'A: OK, infrequently for cough. Do you have trouble sleeping?',
+            'A: OK, infrequently for cough. Are you happy with all answers?',
         );
 
         await testTurn(
             invoker,
             "U: I'm done",
-            TestInput.of(GeneralControlIntent.of({ action:  'complete' })),
-            'A: OK.',
+            TestInput.of(GeneralControlIntent.of({ action: 'builtin_complete' })),
+            'A: Great, thank you.',
         );
 
-        // await testTurn(
-        //     invoker,
-        //     'U: cat',
-        //     TestInput.of(SingleValueControlIntent.of('PetBreed', { PetBreed: 'persian' })),
-        //     'A: OK, persian. What is your selection? Some suggestions are adopt, foster or sponsor.',
-        // );
+        expect(controlManager.questionnaireControl.state.value).deep.equals({
+            cough: {
+                choiceId: 'rarely',
+            },
+            headache: {
+                choiceId: 'often',
+            },
+        });
+    });
+
+    /**
+     * User answers one of the questions with "no"
+     * Notes:
+     *  - The 'no' is understood to be equivalent to "rarely" via control props
+     *  - Answering with a bare 'no' does not produce implicit feedback in the prompt as
+     *    risk of misunderstanding is low.
+     */
+    test('bare no', async () => {
+        const controlManager = new MultipleLists.DemoControlManager();
+        const requestHandler = new ControlHandler(controlManager);
+        const invoker = new SkillInvoker(requestHandler);
+        const response1 = await testTurn(
+            invoker,
+            'U: __',
+            TestInput.launchRequest(),
+            'A: Welcome. Do you frequently have a headache?',
+        );
+
+        await testTurn(
+            invoker,
+            'U: no',
+            TestInput.of(IntentBuilder.of('AMAZON.NoIntent')),
+            'A: Have you been coughing a lot?',
+        );
+
+        expect(controlManager.questionnaireControl.state.value).deep.equals({
+            headache: {
+                choiceId: 'rarely',
+            },
+        });
+    });
+
+    /**
+     * User ignores the prompt and directly answers a question of their choosing 
+     * Notes: 
+     
+     */
+    test('answering specific question', async () => {
+        const controlManager = new MultipleLists.DemoControlManager();
+        const requestHandler = new ControlHandler(controlManager);
+        const invoker = new SkillInvoker(requestHandler);
+        const response1 = await testTurn(
+            invoker,
+            'U: __',
+            TestInput.launchRequest(),
+            'A: Welcome. Do you frequently have a headache?',
+        );
+
+        await testTurn(
+            invoker,
+            'U: I cough all the time',
+            TestInput.of(
+                SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
+            ),
+            'A: OK, often for cough. Do you frequently have a headache?',
+        );
+
+        expect(controlManager.questionnaireControl.state.value).deep.equals({
+            cough: {
+                choiceId: 'often',
+            },
+        });
     });
 });
