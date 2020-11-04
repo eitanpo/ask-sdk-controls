@@ -199,6 +199,14 @@ export namespace InputUtil {
     }
 
     /**
+     * Test if the feedback is defined.
+     * @param target - Target slot value ID
+     */
+    export function targetIsDefined(target: string | undefined): boolean {
+        return target !== undefined;
+    }
+
+    /**
      * Test if the feedback is undefined.
      * @param target - Target slot value ID
      */
