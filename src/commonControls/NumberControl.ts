@@ -290,7 +290,10 @@ export class NumberControl extends Control implements InteractionModelContributo
     private rawProps: NumberControlProps;
     private props: DeepRequired<NumberControlProps>;
     private handleFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>;
-    private initiativeFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>;
+    private initiativeFunc?: (
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ) => void | Promise<void>;
 
     constructor(props: NumberControlProps) {
         super(props.id);
@@ -431,7 +434,7 @@ export class NumberControl extends Control implements InteractionModelContributo
 
         await this.handleFunc(input, resultBuilder);
 
-        if (!resultBuilder.hasInitiativeAct() && await this.canTakeInitiative(input)) {
+        if (!resultBuilder.hasInitiativeAct() && (await this.canTakeInitiative(input))) {
             return this.takeInitiative(input, resultBuilder);
         }
     }
@@ -440,7 +443,7 @@ export class NumberControl extends Control implements InteractionModelContributo
     async canTakeInitiative(input: ControlInput): Promise<boolean> {
         return (
             this.wantsToElicitValue(input) ||
-            await this.wantsToFixInvalidValue(input) ||
+            (await this.wantsToFixInvalidValue(input)) ||
             this.wantsToConfirmValue(input)
         );
     }
@@ -1061,7 +1064,10 @@ export class NumberControl extends Control implements InteractionModelContributo
      * the following: U: No, {change} the value please A: What value do you want
      * to {change} to?
      */
-    private async commonHandlerWhenValueRejected(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
+    private async commonHandlerWhenValueRejected(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         this.state.rejectedValues.push(this.state.value!);
         const ambiguousPartner = this.getAmbiguousPartner(this.state.value!);
         if (ambiguousPartner !== undefined && !this.state.rejectedValues.includes(ambiguousPartner)) {

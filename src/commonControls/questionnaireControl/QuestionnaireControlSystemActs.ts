@@ -31,9 +31,7 @@ export class AskQuestionAct extends InitiativeAct {
     }
 
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
 
@@ -47,12 +45,9 @@ export class ConfirmAnswerToQuestion extends InitiativeAct {
     }
 
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
-
 
 // TODO: general purpose.. move to common area.
 /**
@@ -60,9 +55,7 @@ export class ConfirmAnswerToQuestion extends InitiativeAct {
  */
 export class AskIfCompleteAct extends InitiativeAct {
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
 
@@ -71,13 +64,9 @@ export class AskIfCompleteAct extends InitiativeAct {
  */
 export class SuggestContinueAct extends InitiativeAct {
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
-
-
 
 export interface QuestionAnsweredActPayload {
     questionId: string;
@@ -130,27 +119,21 @@ export class QuestionAnsweredAct extends ContentAct {
     }
 
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
 
 // TODO: general purpose.. move to common area.
 export class CompletedAct extends ContentAct {
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
 
 // TODO: general purpose.. move to common area.
 export class AcknowledgeNotCompleteAct extends ContentAct {
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }
 
@@ -170,8 +153,6 @@ export class QuestionnaireCompletionRejectedAct extends ContentAct {
     }
 
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
-        throw new Error(
-            'this.render() is not implemented. Perform rendering in Control.render()',
-        );
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }
 }

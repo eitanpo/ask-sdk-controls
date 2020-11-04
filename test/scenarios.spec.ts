@@ -258,7 +258,11 @@ suite('== Custom Handler function scenarios ==', () => {
                 },
                 inputHandling: {
                     customHandlingFuncs: [
-                        { name: 'custom::setDateEvent', canHandle: isSetDateEvent, handle: handleSetDateEvent },
+                        {
+                            name: 'custom::setDateEvent',
+                            canHandle: isSetDateEvent,
+                            handle: handleSetDateEvent,
+                        },
                         { name: 'custom::setValue', canHandle: isSetValue, handle: handleSetValue },
                     ],
                 },

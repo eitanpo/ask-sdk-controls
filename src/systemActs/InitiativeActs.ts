@@ -97,7 +97,7 @@ export class RequestValueAct extends InitiativeAct {
  *
  * Usage:
  *  * Typically issued in response to the user saying they want to change a value, e.g. "U: Please change the event date."
- * 
+ *
  * TODO: i18n
  */
 export class RequestChangedValueAct extends InitiativeAct {
@@ -222,7 +222,7 @@ export class ConfirmValueAct<T> extends InitiativeAct {
 /**
  * An initiative act that defines literal prompt and reprompt fragments.
  *
- * Default rendering: "[this.payload.promptFragment]?" for both prompt & reprompt 
+ * Default rendering: "[this.payload.promptFragment]?" for both prompt & reprompt
  *
  * Usage:
  *  * Use LiteralInitiativeAct only in simple situations where it would be annoying
@@ -249,7 +249,7 @@ export class LiteralInitiativeAct extends InitiativeAct {
 /**
  * An initiative act that suggests a specific value with a asks yes/no question.
  *
- * Default (en-US): "Did you perhaps mean [this.payload.value]?" for both prompt and reprompt 
+ * Default (en-US): "Did you perhaps mean [this.payload.value]?" for both prompt and reprompt
  */
 //TODO:i18n
 export class SuggestValueAct<T> extends InitiativeAct {

@@ -945,7 +945,7 @@ export const defaultI18nResources: Resource = {
                                 'nothing else',
                                 'got nothing else',
                                 'got nothing more',
-                                'not nothing further'
+                                'not nothing further',
                             ],
                         },
                     },

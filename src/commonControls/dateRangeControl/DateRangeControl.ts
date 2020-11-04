@@ -1290,9 +1290,9 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
     async canTakeInitiative(input: ControlInput): Promise<boolean> {
         return (
             this.needsValue(input) ||
-            await this.canTakeInitiativeByChild(input) ||
+            (await this.canTakeInitiativeByChild(input)) ||
             this.isChangingRange() ||
-            await this.wantsToCorrectRange(input) ||
+            (await this.wantsToCorrectRange(input)) ||
             this.wantsToConfirmRange(input)
         );
     }

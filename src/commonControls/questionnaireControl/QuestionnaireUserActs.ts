@@ -16,7 +16,6 @@ import { QuestionnaireLineItemAnswer } from './QuestionnaireControlStructs';
 //  * My answer to [question_a] is [answer_b]
 //  */
 // export class DirectAnswerAct implements UserAct {
-    
 
 //     constructor(questionId: string, answer: QuestionnaireLineItemAnswer) {
 //         this.questionId = questionId;

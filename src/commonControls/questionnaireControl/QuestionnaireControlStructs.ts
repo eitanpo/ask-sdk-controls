@@ -65,28 +65,28 @@ export interface Question {
 
     /**
      * Rendered form of the question for use in prompts.
-     * 
+     *
      * - This prompt should be a complete sentence with leading uppercase and trailing question-mark.
-     * 
+     *
      * Examples: 'Do you like cats?', 'How do you rate the service?'
      */
-    prompt: string,
+    prompt: string;
 
     /**
      * Short-form rendering of the question for use in prompts.
-     * 
+     *
      * This prompt should be a phrase without leading uppercase and no punctuation.
-     * 
-     * Example: 
+     *
+     * Example:
      *  When providing implicit confirmation, the short form of the question may be used:
      * ```
      *  questionPrompt: "Do you like cats?"
      *  questionPromptShortForm: "cats"
      * ```
      * So that a prompt can be constructed like "OK, yes for cats.  [next question]"
-     * 
+     *
      */
-    promptShortForm: string
+    promptShortForm: string;
 }
 
 export interface Choice {
@@ -102,9 +102,9 @@ export interface Choice {
 
     /**
      * Rendered form of the choice for use in prompts.
-     * 
+     *
      * - Rendered form should be a short phrase without punctuation.
-     * 
+     *
      * Examples: 'like', 'do not like'
      * Example prompt:  'Did you say [like]?'
      */
@@ -140,7 +140,7 @@ export interface QuestionnaireContent {
      * The implied choiceID if the user answers 'yes' to one of the questions.
      *
      * Default: The last element of `choices` array, i.e. `choice[len-1]`
-     * 
+     *
      * Purpose:
      *  - main questionnaires will ask yes/no type questions (possibly with additional
      *    choices).  If this prop is set, the control will automatically handle 'U: No'
@@ -148,16 +148,16 @@ export interface QuestionnaireContent {
      * Example:
      * ```
      * APL:
-     *    Frequently   Infrequently 
+     *    Frequently   Infrequently
      *      [  ]          [  ]         Go to the shops
      *      [  ]          [  ]         Shop online
      *      [  ]          [  ]         Use recurring orders
-     * 
+     *
      * A: Do you frequently do xyz?
      * U: yes --> equivalent to selecting 'frequently' or saying 'frequently'
-     * 
+     *
      * ```
-     * 
+     *
      */
     choiceForYesUtterance?: string;
 
@@ -165,7 +165,7 @@ export interface QuestionnaireContent {
      * The implied choiceID if the user answers 'no' to one of the questions.
      *
      * Default: The last element of `choices` array, i.e. `choice[len-1]`
-     * 
+     *
      * Purpose:
      *  - main questionnaires will ask yes/no type questions (possibly with additional
      *    choices).  If this prop is set, the control will automatically handle 'U: No'
@@ -173,16 +173,16 @@ export interface QuestionnaireContent {
      * Example:
      * ```
      * APL:
-     *    Frequently   Infrequently 
+     *    Frequently   Infrequently
      *      [  ]          [  ]         Go to the shops
      *      [  ]          [  ]         Shop online
      *      [  ]          [  ]         Use recurring orders
-     * 
+     *
      * A: Do you frequently do xyz?
      * U: yes --> equivalent to selecting 'frequently' or saying 'frequently'
-     * 
+     *
      * ```
-     * 
+     *
      */
     choiceForNoUtterance?: string;
 }
@@ -190,14 +190,14 @@ export interface QuestionnaireContent {
 // export interface RenderedQuestionnaireContent {
 //     /**
 //      * Simple rendering for each question, by ID.
-//      * 
+//      *
 //      * Used in default prompts/APL and available for use in custom prompts.
 //      */
 //     questions: {[key: string]: string};
 
 //     /**
 //      * Simple rendering for each choice, by ID.
-//      * 
+//      *
 //      * Used in default prompts/APL and available for use in custom prompts.
 //      */
 //     choices: {[key: string]: string};

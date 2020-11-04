@@ -641,7 +641,7 @@ export class DateControl extends Control implements InteractionModelContributor 
     async canTakeInitiative(input: ControlInput): Promise<boolean> {
         return (
             this.wantsToConfirmValue(input) ||
-            await this.wantsToFixInvalidValue(input) ||
+            (await this.wantsToFixInvalidValue(input)) ||
             this.wantsToElicitValue(input)
         );
     }

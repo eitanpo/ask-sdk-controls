@@ -293,7 +293,10 @@ export class ValueControl extends Control implements InteractionModelContributor
     private rawProps: ValueControlProps;
     private props: DeepRequired<ValueControlProps>;
     private handleFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>;
-    private initiativeFunc?: (input: ControlInput, resultBuilder: ControlResultBuilder) => void | Promise<void>;
+    private initiativeFunc?: (
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ) => void | Promise<void>;
 
     constructor(props: ValueControlProps) {
         super(props.id);
@@ -423,7 +426,7 @@ export class ValueControl extends Control implements InteractionModelContributor
 
         await this.handleFunc(input, resultBuilder);
 
-        if (resultBuilder.hasInitiativeAct() !== true && await this.canTakeInitiative(input) === true) {
+        if (resultBuilder.hasInitiativeAct() !== true && (await this.canTakeInitiative(input)) === true) {
             await this.takeInitiative(input, resultBuilder);
         }
     }
@@ -459,7 +462,10 @@ export class ValueControl extends Control implements InteractionModelContributor
      * @param input - Input
      * @param resultBuilder - ResultBuilder
      */
-    private async handleSetWithValue(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void>  {
+    private async handleSetWithValue(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const { valueStr, erMatch } = InputUtil.getValueResolution(input);
         this.setValue(valueStr, erMatch);
         await this.validateAndAddActs(input, resultBuilder, $.Action.Set);
@@ -531,7 +537,10 @@ export class ValueControl extends Control implements InteractionModelContributor
      * @param input - Input
      * @param resultBuilder - Result builder
      */
-    private async handleChangeWithValue(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
+    private async handleChangeWithValue(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const { valueStr, erMatch } = InputUtil.getValueResolution(input);
         this.setValue(valueStr, erMatch);
         await this.validateAndAddActs(input, resultBuilder, $.Action.Change);
@@ -721,7 +730,7 @@ export class ValueControl extends Control implements InteractionModelContributor
     async canTakeInitiative(input: ControlInput): Promise<boolean> {
         return (
             this.wantsToConfirmValue(input) ||
-            await this.wantsToFixInvalidValue(input) ||
+            (await this.wantsToFixInvalidValue(input)) ||
             this.wantsToElicitValue(input)
         );
     }
@@ -857,7 +866,7 @@ export class ValueControl extends Control implements InteractionModelContributor
      * @param input - Input
      */
     private async wantsToFixInvalidValue(input: ControlInput): Promise<boolean> {
-        if (this.state.value !== undefined && await this.validate(input) !== true) {
+        if (this.state.value !== undefined && (await this.validate(input)) !== true) {
             this.initiativeFunc = this.fixInvalidValue;
             return true;
         }
