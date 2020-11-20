@@ -11,6 +11,7 @@
  * permissions and limitations under the License.
  */
 
+import { expect } from 'chai';
 import { suite, test } from 'mocha';
 import { GeneralControlIntent } from '../../src';
 import { ListControl } from '../../src/commonControls/listControl/ListControl';
@@ -27,23 +28,23 @@ import { testE2E, TestInput, testTurn, waitForDebugger } from '../../src/utils/t
 waitForDebugger();
 
 suite('ListControl e2e tests', () => {
-    class ListControlManager extends ControlManager {
-        createControlTree(): Control {
-            return new ListControl({
-                id: 'apple',
-                validation: (state, input) =>
-                    ['iPhone', 'iPad', 'MacBook'].includes(state.value!)
-                        ? true
-                        : { renderedReason: 'Apple Suite category validation failed' },
-                listItemIDs: ['iPhone', 'iPad', 'MacBook'],
-                slotType: 'AppleSuite',
-                confirmationRequired: true,
-                prompts: {
-                    valueSet: '',
-                },
-            });
-        }
+class ListControlManager extends ControlManager {
+    createControlTree(): Control {
+        return new ListControl({
+            id: 'apple',
+            validation: (state, input) =>
+                ['iPhone', 'iPad', 'MacBook'].includes(state.value!)
+                    ? true
+                    : { renderedReason: 'Apple Suite category validation failed' },
+            listItemIDs: ['iPhone', 'iPad', 'MacBook'],
+            slotType: 'AppleSuite',
+            confirmationRequired: true,
+            prompts: {
+                valueSet: '',
+            },
+        });
     }
+}
 
     test('product value valid, needs explicit affirming', async () => {
         const requestHandler = new ControlHandler(new ListControlManager());
@@ -98,7 +99,7 @@ suite('ListControl e2e tests', () => {
             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPhone' })),
             'A: Was that iPhone?',
         );
-
+        
         await testTurn(
             invoker,
             'U: Yes.',

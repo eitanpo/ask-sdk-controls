@@ -274,15 +274,15 @@ export class ListControlInteractionModelProps {
          * - if the list is managing a SlotType `ExtendedBoolean` with values
          *   `yes | no | maybe`, create and register a filtered SlotType
          *   `ExtendedBooleanFiltered` that has only the `maybe` value.
-         * - during interaction model generation, the risky utterance shapes
-         *   will used `ExtendedBooleanFiltered` whereas non-risky utterance shapes
-         *   will use `ExtendedBoolean`.
          */
         filteredSlotType: string;
 
         /**
          * Function that maps an intent to a valueId for props.slotValue.
          *
+         * Default: the null function () => undefined
+         * Helpers: IntentUtils.IntentNameToValueMapper may be useful.
+         * 
          * Purpose:
          * * Some simple utterances intended for this control will be
          *   interpreted as intents that are unknown to this control.  This
@@ -439,7 +439,7 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
 
         this.rawProps = props;
-        this.props = ListControl.mergeWithDefaultProps(props);
+        this.props = ListControl.mergeWithDefaultProps(props);        
     }
 
     /**
@@ -464,7 +464,7 @@ export class ListControl extends Control implements InteractionModelContributor 
                 targets: [$.Target.Choice, $.Target.It],
                 slotValueConflictExtensions: {
                     filteredSlotType: props.slotType,
-                    intentToValueMapper: () => undefined,
+                    intentToValueMapper: () => undefined, //TODO: should we make IntentUtils.IntentNameToValueMapper the default?
                 },
             },
             prompts: {
@@ -634,7 +634,7 @@ export class ListControl extends Control implements InteractionModelContributor 
                 (input.request as IntentRequest).intent,
             );
             okIf(InputUtil.targetIsMatchOrUndefined(target, this.props.interactionModel.targets));
-            okIf(InputUtil.valueTypeMatch(valueType, this.props.slotType));
+            okIf(InputUtil.valueTypeMatch(valueType, this.props.slotType)); // TODO: GENERAL BUG: don't all handlers need to accept valueType == slotType | filteredSlotType.
             okIf(InputUtil.valueStrDefined(valueStr));
             okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
             okIf(InputUtil.actionIsMatch(action, this.props.interactionModel.actions.change));
