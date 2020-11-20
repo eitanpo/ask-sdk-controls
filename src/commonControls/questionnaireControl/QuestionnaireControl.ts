@@ -12,7 +12,7 @@
  */
 
 import { getSupportedInterfaces } from 'ask-sdk-core';
-import { IntentRequest, interfaces } from 'ask-sdk-model';
+import { Intent, IntentRequest, interfaces } from 'ask-sdk-model';
 import i18next from 'i18next';
 import _ from 'lodash';
 import { Strings as $ } from '../../constants/Strings';
@@ -80,14 +80,6 @@ export interface QuestionnaireControlProps extends ControlProps {
         | ((this: QuestionnaireControl, input: ControlInput) => QuestionnaireContent);
 
     /**
-     * Slot type for the answers.
-     *
-     * Usage:
-     * - The slot type defines the set of expected value items.
-     */
-    slotType: string;
-
-    /**
      * Determines if the Control must obtain a value.
      *
      * If `true`:
@@ -116,7 +108,7 @@ export interface QuestionnaireControlProps extends ControlProps {
      * If `true`:
      *  - a yes/no question will be asked, e.g. 'was that [answer a]?'.
      */
-    answerConfirmationRequired?: boolean | ((this: QuestionnaireControl, input: ControlInput) => boolean); //TODO: use this
+    confirmEachChoice?: boolean | ((this: QuestionnaireControl, input: ControlInput) => boolean); //TODO: use this
 
     /**
      * Props to customize the prompt fragments that will be added by
@@ -156,18 +148,11 @@ export interface QuestionnaireControlProps extends ControlProps {
  */
 export interface QuestionnaireControlActionProps {
     /**
-     * Action slot value IDs that are associated with the "set value" capability.
+     * Action slot value IDs that are associated with the "administer the questionnaire" capability.
      *
-     * Default: ['builtin_set', 'builtin_select']
+     * Default: ['builtin_administer', 'builtin_open'] //TODO. add these.
      */
-    set?: string[]; //TODO:review/revise.  Perhaps change to names 'answer' 'changeAnswer' but should remain in sync with ListControl
-
-    /**
-     * Action slot value IDs that are associated with the "change value" capability.
-     *
-     * Default ['builtin_change']
-     */
-    change?: string[];
+    administer?: string[];
 
     /**
      * Action slot value IDs that are associated with the "complete questionnaire" capability.
@@ -175,6 +160,20 @@ export interface QuestionnaireControlActionProps {
      * Default ['builtin_complete']
      */
     complete?: string[];
+
+    /**
+     * Action slot value IDs that are associated with the "set an answer" capability.
+     *
+     * Default ['builtin_set', 'builtin_select']
+     */
+    set?: string[];
+
+    /**
+     * Action slot value IDs that are associated with the "set an answer" capability.
+     *
+     * Default ['builtin_change']
+     */
+    change?: string[];
 }
 
 /**
@@ -182,50 +181,45 @@ export interface QuestionnaireControlActionProps {
  */
 export class QuestionnaireControlInteractionModelProps {
     /**
-     * Target-slot values associated with this Control, both the control itself and all
-     * possible questions.
+     * Target-slot values associated with this Control as a whole.
      *
-     * Targets associate utterances to a control. For example, if the user says
-     * "change the time", it is parsed as a `GeneralControlIntent` with slot
-     * values `action = change` and `target = time`.  Only controls that are
-     * registered with the `time` target should offer to handle this intent.
+     * Some of these targets are used to associate utterances to 'the questionnaire' as a whole.
+     * For example, if the user says "open the questionnaire", it will be parsed as a
+     * `GeneralControlIntent` with slot values `action = open` and `target = questionnaire`.
      *
-     * Default: `['builtin_it']`
+     * Default: `['builtin_it', 'builtin_questionnaire']`
      *
      * Usage:
-     * - If this prop is defined, it replaces the default; it is not additive
-     *   the defaults.  To add an additional target to the defaults, copy the
-     *   defaults and amend.
-     * - A control can be associated with many target-slot-values, eg ['date',
-     *   'startDate', 'eventStartDate', 'vacationStart']
-     * - It is a good idea to associate with general targets (e.g. date) and
-     *   also with specific targets (e.g. vacationStart) so that the user can
-     *   say either general or specific things.  e.g. 'change the date to
-     *   Tuesday', or 'I want my vacation to start on Tuesday'.
-     * - The association does not have to be exclusive, and general target slot
-     *   values will often be associated with many controls. In situations where
-     *   there is ambiguity about what the user is referring to, the parent
-     *   controls must resolve the confusion.
-     * - The 'builtin_*' IDs are associated with default interaction model data
-     *   (which can be extended as desired). Any other IDs will require a full
-     *   definition of the allowed synonyms in the interaction model.
+     * - If this prop is defined, it replaces the default; it is not additive to the
+     *   defaults.  To add an additional target to the defaults, copy the defaults and
+     *   amend.
+     * - A control can be associated with many targets, eg ['questionnaire',
+     *   'customerServiceFeedback', 'feedback']
+     * - It is a good idea to associate with general targets (e.g. feedback) and also with
+     *   specific targets (e.g. customerServiceFeedback) so that the user can say either
+     *   general or specific things.
+     * - The association does not have to be exclusive, and general target slot values
+     *   will often be associated with many controls. In situations where there is
+     *   ambiguity about what the user is referring to, the parent controls must resolve
+     *   the confusion.
+     * - The 'builtin_*' IDs are associated with default interaction model data (which can
+     *   be extended as desired). Any other IDs will require a full definition of the
+     *   allowed synonyms to be added to the interaction model.
      *
      * Control behavior:
-     * - A control will not handle an input that mentions a target that is not
-     *   registered by this prop.
-     *
+     * - The control will not handle an input that mentions a target that is not defined
+     *   by this prop.
      */
     targets?: string[];
 
     /**
-     * Action slot-values associated to the control's capabilities, both the control
-     * itself and all possible questions
+     * Action slot-values associated to the capabilities of the control as a whole
      *
      * Default:
      * ```
      * {
-     *    set: ['builtin_set', 'builtin_select'],
-     *    change: ['builtin_set']
+     *    administer: [], //TODO.
+     *    complete: ['builtin_complete']
      * }
      * ```
      *
@@ -245,6 +239,61 @@ export class QuestionnaireControlInteractionModelProps {
      *    allowed synonyms in the interaction model.
      */
     actions?: QuestionnaireControlActionProps;
+
+    /**
+     * Slot type that includes entries for every choice provided by the questionnaire.
+     *
+     * If the questionnaire choices include words that overlap with AMAZON built-in
+     * intents, set filteredSlotType to avoid utterance conflicts, particularly if other
+     * parts of the skill expect to receive the conflicting built-in intent.
+     */
+    slotType: string;
+
+    /**
+     * Slot type that contains entries for questionnaire choices that do not conflict with
+     * built-in intents.
+     *
+     * Default: identical to `slotType`.
+     *
+     * Purpose:
+     * - During interaction-model-generation, the `filteredSlotType` is used
+     *   in sample-utterances that would cause conflicts if the regular
+     *   slotType was used.
+     * - If utterance conflicts persist, the skill will not receive the built-in intent
+     *   which may break other interactions.  But if nothing is expecting the built-in
+     *   intent the conflict is benign.
+     *
+     * Example:
+     * if your questionnaire answers are "yes", "no" and "maybe" then the slotType
+     * should have values for all three but the filteredSlotType should only have "maybe".
+     *
+     * TODO: make the prop design consistent with ListControl
+     * TODO: make this jsDoc consistent with ListControl
+     */
+    filteredSlotType?: string;
+
+    /**
+     * Function that maps an intent to a choice ID defined in for props.slotValue.
+     *
+     * Default: the null function () => undefined
+     * Helpers: IntentUtils.IntentNameToValueMapper may be useful.
+     *
+     * Purpose:
+     * * Some simple utterances intended for this control will be
+     *   interpreted as intents that are unknown to this control.  This
+     *   function allows mapping of them.
+     *
+     * Example:
+     * * if the list is managing a SlotType `ExtendedBoolean` with values
+     *   `yes | no | maybe` and filteredSlotType has been configured
+     *   correctly then a user-utterance of 'U: yes' will be interpreted as
+     *   an `AMAZON.YesIntent`.  To ensure that intent is correctly
+     *   processed, declare an intentToValueMapper that maps
+     *   `AMAZON.YesIntent -> 'yes'`.  The built-in logic of the ListControl
+     *   will thus treat AMAZON.YesIntent as the value 'yes', assuming that the
+     *   control is not actively asking a yes/no question.
+     */
+    intentToChoiceMapper: (intent: Intent) => string | undefined;
 }
 
 /**
@@ -397,6 +446,9 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         super(props.id);
         this.rawProps = props;
         this.props = QuestionnaireControl.mergeWithDefaultProps(props);
+        if (this.props.interactionModel.filteredSlotType === 'dummy') {
+            this.props.interactionModel.filteredSlotType = this.props.interactionModel.slotType;
+        }
         this.state.value = {};
     }
 
@@ -411,22 +463,23 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             questionnaireData: {
                 questions: [],
                 choices: [],
-                choiceForYesUtterance: 'dummy',
-                choiceForNoUtterance: 'dummy',
             },
-            slotType: 'dummy',
-
             required: true,
-            answerConfirmationRequired: false,
-
             valid: () => true, //TODO: also implement a builtin for "all questions answered".
+
+            confirmEachChoice: false,
+
             interactionModel: {
-                actions: {
-                    set: [$.Action.Set, $.Action.Select],
-                    change: [$.Action.Change],
-                    complete: [$.Action.Complete],
-                },
+                slotType: 'dummy',
+                filteredSlotType: 'dummy',
                 targets: [$.Target.Choice, $.Target.It],
+                actions: {
+                    administer: [],
+                    complete: [$.Action.Complete],
+                    set: [$.Action.Set, $.Action.Select],
+                    change: [$.Action.Change]
+                },
+                intentToChoiceMapper: () => undefined,
             },
             // questionRenderer: (id: string) => id,
             // choiceRenderer: (id: string) => id,
@@ -552,15 +605,20 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     }
 
     standardInputHandlers: ControlInputHandler[] = [
+        // {
+        //     name: 'BareYesToAskedQuestion (builtin)',
+        //     canHandle: this.isBareYesToAskedQuestion,
+        //     handle: this.handleBareYesToAskedQuestion,
+        // },
+        // {
+        //     name: 'BareNoToAskedQuestion (builtin)',
+        //     canHandle: this.isBareNoToAskedQuestion,
+        //     handle: this.handleBareNoToAskedQuestion,
+        // },
         {
-            name: 'BareYesToAskedQuestion (builtin)',
-            canHandle: this.isBareYesToAskedQuestion,
-            handle: this.handleBareYesToAskedQuestion,
-        },
-        {
-            name: 'BareNoToAskedQuestion (builtin)',
-            canHandle: this.isBareNoToAskedQuestion,
-            handle: this.handleBareNoToAskedQuestion,
+            name: 'MappedToAskedQuestion (builtin)',
+            canHandle: this.isBareAnswerToAskedQuestion,
+            handle: this.handleBareAnswerToAskedQuestion,
         },
         {
             name: 'BareYesToCompletionQuestion (builtin)',
@@ -646,33 +704,35 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         // }
     }
 
-    private isBareYesToAskedQuestion(input: ControlInput): boolean {
+    private isBareAnswerToAskedQuestion(input: ControlInput): any {
         try {
+            okIf(InputUtil.isIntent(input));
             okIf(this.state.activeInitiative?.actName === AskQuestionAct.name);
             okIf(this.state.focusQuestionId !== undefined);
-            okIf(InputUtil.isBareYes(input));
+            const intent = (input.request as IntentRequest).intent;
+            const mappedValue = this.props.interactionModel.intentToChoiceMapper(intent);
+            okIf(mappedValue !== undefined);
             return true;
         } catch (e) {
             return falseIfGuardFailed(e);
         }
     }
 
-    private handleBareYesToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
+    private async handleBareAnswerToAskedQuestion(
+        input: ControlInput,
+        resultBuilder: ControlResultBuilder,
+    ): Promise<void> {
         const content = this.getQuestionnaireContent(input);
         const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
-        const positiveAnswer =
-            content.choiceForYesUtterance !== undefined && content.choiceForYesUtterance !== 'dummy'
-                ? content.choiceForYesUtterance
-                : content.choices[0].id;
-
-        const choiceIndex = this.getChoiceIndexById(content, positiveAnswer);
+        const intent = (input.request as IntentRequest).intent;
+        const mappedValue = this.props.interactionModel.intentToChoiceMapper(intent)!;
+        const choiceIndex = this.getChoiceIndexById(content, mappedValue);
         const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
-
-        this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
+        this.updateAnswer(question.id, mappedValue!, input, resultBuilder);
         resultBuilder.addAct(
             new QuestionAnsweredAct(this, {
                 questionId: question.id,
-                choiceId: positiveAnswer,
+                choiceId: mappedValue,
                 userAnsweredWithExplicitValue: false,
                 userMentionedQuestion: false,
                 renderedChoice: content.choices[choiceIndex].prompt,
@@ -685,43 +745,82 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return;
     }
 
-    private isBareNoToAskedQuestion(input: ControlInput): boolean {
-        try {
-            okIf(this.state.activeInitiative?.actName === AskQuestionAct.name);
-            okIf(this.state.focusQuestionId !== undefined);
-            okIf(InputUtil.isBareNo(input));
-            return true;
-        } catch (e) {
-            return falseIfGuardFailed(e);
-        }
-    }
+    // private isBareYesToAskedQuestion(input: ControlInput): boolean {
+    //     try {
+    //         okIf(this.state.activeInitiative?.actName === AskQuestionAct.name);
+    //         okIf(this.state.focusQuestionId !== undefined);
+    //         okIf(InputUtil.isBareYes(input));
+    //         return true;
+    //     } catch (e) {
+    //         return falseIfGuardFailed(e);
+    //     }
+    // }
 
-    private handleBareNoToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
-        const content = this.getQuestionnaireContent(input);
-        const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
-        const negativeAnswer =
-            content.choiceForNoUtterance !== undefined && content.choiceForNoUtterance !== 'dummy'
-                ? content.choiceForNoUtterance
-                : content.choices[0].id;
+    // private handleBareYesToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
+    //     const content = this.getQuestionnaireContent(input);
+    //     const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
+    //     const positiveAnswer =
+    //         content.choiceForYesUtterance !== undefined && content.choiceForYesUtterance !== 'dummy'
+    //             ? content.choiceForYesUtterance
+    //             : content.choices[0].id;
 
-        const choiceIndex = this.getChoiceIndexById(content, negativeAnswer);
-        const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
+    //     const choiceIndex = this.getChoiceIndexById(content, positiveAnswer);
+    //     const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
 
-        this.updateAnswer(question.id, negativeAnswer, input, resultBuilder);
-        resultBuilder.addAct(
-            new QuestionAnsweredAct(this, {
-                questionId: question.id,
-                choiceId: negativeAnswer,
-                userAnsweredWithExplicitValue: false,
-                userMentionedQuestion: false,
-                renderedChoice: content.choices[choiceIndex].prompt,
-                renderedQuestion: content.questions[questionIndex].prompt,
-                renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
-            }),
-        );
-        this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
-        return;
-    }
+    //     this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
+    //     resultBuilder.addAct(
+    //         new QuestionAnsweredAct(this, {
+    //             questionId: question.id,
+    //             choiceId: positiveAnswer,
+    //             userAnsweredWithExplicitValue: false,
+    //             userMentionedQuestion: false,
+    //             renderedChoice: content.choices[choiceIndex].prompt,
+    //             renderedQuestion: content.choices[questionIndex].prompt,
+    //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+    //         }),
+    //     );
+
+    //     this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
+    //     return;
+    // }
+
+    // private isBareNoToAskedQuestion(input: ControlInput): boolean {
+    //     try {
+    //         okIf(this.state.activeInitiative?.actName === AskQuestionAct.name);
+    //         okIf(this.state.focusQuestionId !== undefined);
+    //         okIf(InputUtil.isBareNo(input));
+    //         return true;
+    //     } catch (e) {
+    //         return falseIfGuardFailed(e);
+    //     }
+    // }
+
+    // private handleBareNoToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
+    //     const content = this.getQuestionnaireContent(input);
+    //     const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
+    //     const negativeAnswer =
+    //         content.choiceForNoUtterance !== undefined && content.choiceForNoUtterance !== 'dummy'
+    //             ? content.choiceForNoUtterance
+    //             : content.choices[0].id;
+
+    //     const choiceIndex = this.getChoiceIndexById(content, negativeAnswer);
+    //     const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
+
+    //     this.updateAnswer(question.id, negativeAnswer, input, resultBuilder);
+    //     resultBuilder.addAct(
+    //         new QuestionAnsweredAct(this, {
+    //             questionId: question.id,
+    //             choiceId: negativeAnswer,
+    //             userAnsweredWithExplicitValue: false,
+    //             userMentionedQuestion: false,
+    //             renderedChoice: content.choices[choiceIndex].prompt,
+    //             renderedQuestion: content.questions[questionIndex].prompt,
+    //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+    //         }),
+    //     );
+    //     this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
+    //     return;
+    // }
 
     private isBareYesToCompletionQuestion(input: ControlInput): boolean {
         try {
@@ -758,12 +857,17 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             okIf(this.state.focusQuestionId !== undefined);
             const question = this.getQuestionContentById(this.state.focusQuestionId, input);
 
-            okIf(InputUtil.isIntent(input, SingleValueControlIntent.intentName(this.props.slotType)));
+            okIf(
+                InputUtil.isIntent(
+                    input,
+                    SingleValueControlIntent.intentName(this.props.interactionModel.slotType),
+                ),
+            );
             const { feedback, action, target, valueStr, valueType } = unpackSingleValueControlIntent(
                 (input.request as IntentRequest).intent,
             );
             okIf(InputUtil.targetIsUndefined(target));
-            okIf(InputUtil.valueTypeMatch(valueType, this.props.slotType));
+            okIf(InputUtil.valueTypeMatch(valueType, this.getSlotTypes()));
             okIf(InputUtil.valueStrDefined(valueStr));
             okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
             okIf(
@@ -817,7 +921,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     private isSpecificAnswerToSpecificQuestion(input: ControlInput): boolean {
         try {
-            okIf(InputUtil.isIntent(input, SingleValueControlIntent.intentName(this.props.slotType)));
+            okIf(InputUtil.isIntent(input, SingleValueControlIntent.intentName(this.props.interactionModel.slotType)));
             const { feedback, action, target, valueStr, valueType } = unpackSingleValueControlIntent(
                 (input.request as IntentRequest).intent,
             );
@@ -827,7 +931,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
             okIf(targetedQuestion !== undefined);
 
-            okIf(InputUtil.valueTypeMatch(valueType, this.props.slotType));
+            okIf(InputUtil.valueTypeMatch(valueType, this.props.interactionModel.slotType));
             okIf(InputUtil.valueStrDefined(valueStr));
             okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
             okIf(
@@ -1083,14 +1187,14 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             throw new Error('props.questionnaireContent has no choices');
         }
 
-        content.choiceForYesUtterance = content.choiceForYesUtterance ?? 'dummy';
-        content.choiceForNoUtterance = content.choiceForNoUtterance ?? 'dummy';
+        // content.choiceForYesUtterance = content.choiceForYesUtterance ?? 'dummy';
+        // content.choiceForNoUtterance = content.choiceForNoUtterance ?? 'dummy';
 
         const deepRequiredContent: QuestionnaireContent = {
             choices: content.choices,
             questions: content.questions,
-            choiceForYesUtterance: content.choiceForYesUtterance ?? 'dummy',
-            choiceForNoUtterance: content.choiceForNoUtterance ?? 'dummy',
+            // choiceForYesUtterance: content.choiceForYesUtterance ?? 'dummy',
+            // choiceForNoUtterance: content.choiceForNoUtterance ?? 'dummy',
         };
 
         return deepRequiredContent;
@@ -1236,13 +1340,9 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     public updateInteractionModel(generator: ControlInteractionModelGenerator, imData: ModelData) {
         generator.addControlIntent(new GeneralControlIntent(), imData);
         generator.addControlIntent(
-            new SingleValueControlIntent(
-                this.props.slotType,
-                //this.props.interactionModel.slotValueConflictExtensions.filteredSlotType, //TODO.
-            ),
+            new SingleValueControlIntent(this.props.slotType, this.props.filteredSlotType),
             imData,
         );
-        //generator.addControlIntent(new OrdinalControlIntent(), imData);
         generator.addYesAndNoIntents();
         if (this.props.interactionModel.targets.includes($.Target.Choice)) {
             generator.addValuesToSlotType(
@@ -1326,5 +1426,9 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     private setCompletionFlag() {
         this.state.isExplicitlyCompleted = true;
+    }
+
+    private getSlotTypes(): string[] {
+        return [this.props.interactionModel.slotType, this.props.interactionModel.filteredSlotType];
     }
 }

@@ -10,7 +10,7 @@ export namespace MultipleLists {
 
         questionnaireControl = new QuestionnaireControl({
             id: 'healthScreen',
-            slotType: 'FrequencyAnswer', // todo: add filtered type. so this can be YesNoMaybe.
+            slotType: 'FrequencyAnswer',
             questionnaireData: {
                 questions: [
                     {
@@ -49,7 +49,7 @@ export namespace MultipleLists {
 
                 //These are special support so that we can offer automatic
                 //handling of YesIntent/NoIntent.
-
+                
                 choiceForYesUtterance: 'often',
                 choiceForNoUtterance: 'rarely',
             },

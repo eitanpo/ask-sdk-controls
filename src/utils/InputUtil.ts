@@ -237,8 +237,9 @@ export namespace InputUtil {
      * @param valueType - ValueType slot value ID
      * @param expectedValueType - ValueType slot value ID to match against
      */
-    export function valueTypeMatch(valueType: string | undefined, expectedValueType: string): boolean {
-        return valueType !== undefined && valueType === expectedValueType;
+    export function valueTypeMatch(valueType: string | undefined, expectedValueType: string | string[]): boolean {
+        const expectedTypes = Array.isArray(expectedValueType) ? expectedValueType : [expectedValueType]
+        return valueType !== undefined && expectedValueType.includes(valueType);
     }
 
     /**

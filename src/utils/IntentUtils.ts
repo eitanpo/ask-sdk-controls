@@ -255,8 +255,12 @@ export function getMVSSlotResolutions(
 /**
  * Utility to extract a 'valueId' from common intent name shapes.
  *
+ * Purpose:
+ *  - this is intended to be used with the ListControl prop: nlu.slotValueConflictExtensions.intentToValueMapper
+ *  
+ * Behavior:
  * The name is processed with the following rules:
- * - the maximal prefix ending in a period is removed.
+ * - the longest prefix ending in a period is removed.
  * - a suffix of 'Intent' is removed.
  * - the first character of the result is converted to lowerCase
  *
@@ -267,7 +271,9 @@ export function getMVSSlotResolutions(
  *   AMAZON.YesIntent -> 'yes'
  *   AMAZON.ShuffleOffIntent -> 'shuffleOFf'
  * ```
+ * 
  */
+//TODO: BUG: fix name to lowercase.
 export function IntentNameToValueMapper(intent: Intent, slotValueIDs: string[]): string | undefined {
     let result = intent.name;
     const indexOfLastDot = result.lastIndexOf('.');
