@@ -273,8 +273,7 @@ export function getMVSSlotResolutions(
  * ```
  * 
  */
-//TODO: BUG: fix name to lowercase.
-export function IntentNameToValueMapper(intent: Intent, slotValueIDs: string[]): string | undefined {
+export function defaultIntentToValueMapper(intent: Intent): string {
     let result = intent.name;
     const indexOfLastDot = result.lastIndexOf('.');
     if (indexOfLastDot >= 0) {
@@ -287,5 +286,5 @@ export function IntentNameToValueMapper(intent: Intent, slotValueIDs: string[]):
     const newFirstChar = result.charAt(0).toLocaleLowerCase();
     result = `${newFirstChar}${result.substr(1)}`;
 
-    return slotValueIDs.includes(result) ? result : undefined;
+    return result;
 }

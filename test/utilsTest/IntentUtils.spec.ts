@@ -13,44 +13,44 @@
 
 import { expect } from 'chai';
 import { suite, test } from 'mocha';
-import { IntentBuilder, IntentNameToValueMapper } from '../../src/utils/IntentUtils';
+import { IntentBuilder, defaultIntentToValueMapper } from '../../src/utils/IntentUtils';
 
 suite('== IntentUtils.IntentNameToValueMapper ==', () => {
     test("WeatherIntent -> 'weather'", async () => {
-        expect('weather').equal(IntentNameToValueMapper(IntentBuilder.of('weatherIntent'), ['weather']));
+        expect('weather').equal(defaultIntentToValueMapper(IntentBuilder.of('weatherIntent')));
     });
 
     test("GetWeatherIntent -> 'getWeather'", async () => {
         expect('getWeather').equal(
-            IntentNameToValueMapper(IntentBuilder.of('GetWeatherIntent'), ['getWeather']),
+            defaultIntentToValueMapper(IntentBuilder.of('GetWeatherIntent')),
         );
     });
 
     test("AMAZON.YesIntent -> 'yes'", async () => {
-        expect('yes').equal(IntentNameToValueMapper(IntentBuilder.of('AMAZON.YesIntent'), ['yes']));
+        expect('yes').equal(defaultIntentToValueMapper(IntentBuilder.of('AMAZON.YesIntent')));
     });
 
     test("AMAZON.ShuffleOffIntent -> 'shuffleOff'", async () => {
         expect('shuffleOff').equal(
-            IntentNameToValueMapper(IntentBuilder.of('AMAZON.ShuffleOffIntent'), ['shuffleOff']),
+            defaultIntentToValueMapper(IntentBuilder.of('AMAZON.ShuffleOffIntent')),
         );
     });
 
     test("Namespace1.namespace2.ThingIntent -> 'thing'", async () => {
         expect('thing').equal(
-            IntentNameToValueMapper(IntentBuilder.of('Namespace1.namespace2.ThingIntent'), ['thing']),
+            defaultIntentToValueMapper(IntentBuilder.of('Namespace1.namespace2.ThingIntent')),
         );
     });
 
     test("SomethingRandom -> 'somethingRandom'", async () => {
         expect('somethingRandom').equal(
-            IntentNameToValueMapper(IntentBuilder.of('SomethingRandom'), ['somethingRandom']),
+            defaultIntentToValueMapper(IntentBuilder.of('SomethingRandom')),
         );
     });
 
     test('result not in list of expected values', async () => {
         expect(undefined).equal(
-            IntentNameToValueMapper(IntentBuilder.of('weatherIntent'), ['somethingElse']),
+            defaultIntentToValueMapper(IntentBuilder.of('weatherIntent')),
         );
     });
 });

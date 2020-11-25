@@ -78,3 +78,11 @@ export function falseIfGuardFailed(err: Error): false {
     }
     throw err; // otherwise rethrow
 }
+
+// different style than falseIfGuardFailed
+// better comprehension, but results in 2-lines of boilerplate rather than one.
+export function verifyErrorIsGuardFailure(err: Error): void {
+    if (! (err instanceof GuardFailed)) {
+        throw err;
+    }
+}

@@ -13,17 +13,14 @@
 
 import { suite, test } from 'mocha';
 import { GeneralControlIntent } from '../../src';
-import { ListControl } from '../../src/commonControls/listControl/ListControl';
 import { QuestionnaireControl } from '../../src/commonControls/questionnaireControl/QuestionnaireControl';
-import { Strings as $, Strings } from '../../src/constants/Strings';
+import { Strings } from '../../src/constants/Strings';
 import { Control } from '../../src/controls/Control';
 import { ControlManager } from '../../src/controls/ControlManager';
-import { AmazonIntent } from '../../src/intents/AmazonBuiltInIntent';
-import { SingleValueControlIntent } from '../../src/intents/SingleValueControlIntent';
 import { ControlHandler } from '../../src/runtime/ControlHandler';
-import { IntentBuilder, IntentNameToValueMapper } from '../../src/utils/IntentUtils';
+import { IntentBuilder } from '../../src/utils/IntentUtils';
 import { SkillInvoker } from '../../src/utils/testSupport/SkillInvoker';
-import { testE2E, TestInput, testTurn, waitForDebugger } from '../../src/utils/testSupport/TestingUtils';
+import { TestInput, testTurn, waitForDebugger } from '../../src/utils/testSupport/TestingUtils';
 
 waitForDebugger();
 
@@ -145,46 +142,105 @@ waitForDebugger();
 //         );
 //     });
 
-    //--
+//--
 
-    class YesNoMaybeControlManager extends ControlManager {
-        createControlTree(): Control {
-            return new QuestionnaireControl({
-                id: 'question',
-                listItemIDs: ['yes', 'no', 'maybe'],
-                slotType: 'YesNoMaybe',
-                filteredSlotType: 'Maybe',
-                confirmationRequired: true,
-                interactionModel: {
-                    slotValueConflictExtensions: {
-                        filteredSlotType: 'Maybe',
-                        intentToValueMapper: (intent) => IntentNameToValueMapper(intent, ['yes', 'no']),
-                    },
-                },
-                prompts: {
-                    valueSet: '',
-                },
-            });
-        }
+suite.only('QuestionnaireControl e2e tests', () => {
+    interface TestProps {
+        confirmationRequired: boolean;
     }
 
-    test('ListControl for yes|no|maybe ', async () => {
-        const requestHandler = new ControlHandler(new YesNoMaybeControlManager());
+    function createControlManager(props: TestProps): ControlManager {
+        return new (class extends ControlManager {
+            createControlTree(): Control {
+                return new QuestionnaireControl({
+                    id: 'question',
+                    questionnaireData: {
+                        questions: [
+                            {
+                                id: 'headache',
+                                targets: ['headache'],
+                                prompt: 'Do you frequently have a headache?',
+                                //TODO: APL string.
+                                promptShortForm: 'headache',
+                            },
+                            {
+                                id: 'cough',
+                                targets: ['cough'],
+                                prompt: 'Have you been coughing a lot?',
+                                promptShortForm: 'cough',
+                            },
+                        ],
+                        choices: [
+                            {
+                                id: 'yes',
+                                aplColumnHeader: 'Yes',
+                                prompt: 'yes',
+                            },
+                            {
+                                id: 'no',
+                                aplColumnHeader: 'No',
+                                prompt: 'no',
+                                selectedCharacter: '✖',
+                            },
+                        ],
+                    },
+                    interactionModel: {
+                        slotType: 'YesNoMaybe',
+                        filteredSlotType: 'Maybe',
+                    },
+                    dialog: {
+                        confirmationRequired: props.confirmationRequired,
+                    },
+                    prompts: {
+                        questionAnsweredAct: '',
+                    },
+                });
+            }
+        })();
+    }
+
+    test('basics, confirmation=false', async () => {
+        const requestHandler = new ControlHandler(createControlManager({ confirmationRequired: false }));
         const invoker = new SkillInvoker(requestHandler);
         await testTurn(
             invoker,
             'U: __',
-            TestInput.of(GeneralControlIntent.of({ action: Strings.Action.Set })),
-            'A: What is your selection? Some suggestions are yes, no or maybe.',
+            TestInput.of(GeneralControlIntent.of({ action: Strings.Action.Start })),
+            'A: Do you frequently have a headache?',
         );
 
         await testTurn(
             invoker,
             'U: yes',
             TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
-            'A: Was that yes?',
+            'A: Have you been coughing a lot?',
         );
 
-        await testTurn(invoker, 'U: yes', TestInput.of(IntentBuilder.of('AMAZON.YesIntent')), 'A: Great.');
+        await testTurn(invoker, 'U: yes', TestInput.of(IntentBuilder.of('AMAZON.YesIntent')), 'A: ');
+    });
+
+    test('basics, confirmation=true', async () => {
+        const requestHandler = new ControlHandler(createControlManager({ confirmationRequired: true }));
+        const invoker = new SkillInvoker(requestHandler);
+        await testTurn(
+            invoker,
+            'U: __',
+            TestInput.of(GeneralControlIntent.of({ action: Strings.Action.Start })),
+            'A: Do you frequently have a headache?',
+        );
+
+        await testTurn(
+            invoker,
+            'U: yes',
+            TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
+            'A: Have you been coughing a lot?',
+        );
+
+        await testTurn(
+            invoker,
+            'U: yes',
+            TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
+            'A: Are you happy with all answers?',
+        );
     });
 });

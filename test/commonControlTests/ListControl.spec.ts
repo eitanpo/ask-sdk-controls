@@ -11,7 +11,6 @@
  * permissions and limitations under the License.
  */
 
-import { expect } from 'chai';
 import { suite, test } from 'mocha';
 import { GeneralControlIntent } from '../../src';
 import { ListControl } from '../../src/commonControls/listControl/ListControl';
@@ -21,30 +20,30 @@ import { ControlManager } from '../../src/controls/ControlManager';
 import { AmazonIntent } from '../../src/intents/AmazonBuiltInIntent';
 import { SingleValueControlIntent } from '../../src/intents/SingleValueControlIntent';
 import { ControlHandler } from '../../src/runtime/ControlHandler';
-import { IntentBuilder, IntentNameToValueMapper } from '../../src/utils/IntentUtils';
+import { IntentBuilder, defaultIntentToValueMapper } from '../../src/utils/IntentUtils';
 import { SkillInvoker } from '../../src/utils/testSupport/SkillInvoker';
 import { testE2E, TestInput, testTurn, waitForDebugger } from '../../src/utils/testSupport/TestingUtils';
 
 waitForDebugger();
 
 suite('ListControl e2e tests', () => {
-class ListControlManager extends ControlManager {
-    createControlTree(): Control {
-        return new ListControl({
-            id: 'apple',
-            validation: (state, input) =>
-                ['iPhone', 'iPad', 'MacBook'].includes(state.value!)
-                    ? true
-                    : { renderedReason: 'Apple Suite category validation failed' },
-            listItemIDs: ['iPhone', 'iPad', 'MacBook'],
-            slotType: 'AppleSuite',
-            confirmationRequired: true,
-            prompts: {
-                valueSet: '',
-            },
-        });
+    class ListControlManager extends ControlManager {
+        createControlTree(): Control {
+            return new ListControl({
+                id: 'apple',
+                validation: (state, input) =>
+                    ['iPhone', 'iPad', 'MacBook'].includes(state.value!)
+                        ? true
+                        : { renderedReason: 'Apple Suite category validation failed' },
+                listItemIDs: ['iPhone', 'iPad', 'MacBook'],
+                slotType: 'AppleSuite',
+                confirmationRequired: true,
+                prompts: {
+                    valueSet: '',
+                },
+            });
+        }
     }
-}
 
     test('product value valid, needs explicit affirming', async () => {
         const requestHandler = new ControlHandler(new ListControlManager());
@@ -99,7 +98,7 @@ class ListControlManager extends ControlManager {
             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPhone' })),
             'A: Was that iPhone?',
         );
-        
+
         await testTurn(
             invoker,
             'U: Yes.',
@@ -157,7 +156,7 @@ class ListControlManager extends ControlManager {
                 interactionModel: {
                     slotValueConflictExtensions: {
                         filteredSlotType: 'Maybe',
-                        intentToValueMapper: (intent) => IntentNameToValueMapper(intent, ['yes', 'no']),
+                        intentToValueMapper: (intent) => defaultIntentToValueMapper(intent),  //TODO: make this the default on ListControl.
                     },
                 },
                 prompts: {

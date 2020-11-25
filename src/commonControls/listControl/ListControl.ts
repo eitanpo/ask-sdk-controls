@@ -10,7 +10,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
+import { defaultIntentToValueMapper } from '../../utils/IntentUtils';
 import { getSupportedInterfaces } from 'ask-sdk-core';
 import { Intent, IntentRequest, interfaces } from 'ask-sdk-model';
 import i18next from 'i18next';
@@ -250,6 +250,8 @@ export class ListControlInteractionModelProps {
      */
     actions?: ListControlActionProps;
 
+    //TODO: move these into interactionModel props / interactionModel.advanced
+
     /***
      * Additional properties to resolve utterance conflicts caused by the
      * configured slot type.
@@ -280,8 +282,7 @@ export class ListControlInteractionModelProps {
         /**
          * Function that maps an intent to a valueId for props.slotValue.
          *
-         * Default: the null function () => undefined
-         * Helpers: IntentUtils.IntentNameToValueMapper may be useful.
+         * Default: IntentUtils.defaultIntentToValueMapper
          * 
          * Purpose:
          * * Some simple utterances intended for this control will be
@@ -464,7 +465,7 @@ export class ListControl extends Control implements InteractionModelContributor 
                 targets: [$.Target.Choice, $.Target.It],
                 slotValueConflictExtensions: {
                     filteredSlotType: props.slotType,
-                    intentToValueMapper: () => undefined, //TODO: should we make IntentUtils.IntentNameToValueMapper the default?
+                    intentToValueMapper: defaultIntentToValueMapper
                 },
             },
             prompts: {
@@ -716,6 +717,7 @@ export class ListControl extends Control implements InteractionModelContributor 
                 intent,
             );
             okIf(mappedValue !== undefined);
+            okIf(this.getChoicesList(input).includes(mappedValue))
             this.handleFunc = this.handleMappedBareValue;
             return true;
         } catch (e) {

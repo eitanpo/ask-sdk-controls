@@ -10,7 +10,7 @@ export namespace MultipleLists {
 
         questionnaireControl = new QuestionnaireControl({
             id: 'healthScreen',
-            slotType: 'FrequencyAnswer',
+            
             questionnaireData: {
                 questions: [
                     {
@@ -46,14 +46,9 @@ export namespace MultipleLists {
                         selectedCharacter: '-',
                     },
                 ], // TODO: should be consistent with ListControl. listItemIds vs choices.
-
-                //These are special support so that we can offer automatic
-                //handling of YesIntent/NoIntent.
-                
-                choiceForYesUtterance: 'often',
-                choiceForNoUtterance: 'rarely',
             },
             interactionModel: {
+                slotType: 'FrequencyAnswer',
                 targets: ['builtin_it', 'healthQuestionnaire'], // this should just be the control targets.  The question targets are in content.
             }                    
         });

@@ -11,6 +11,7 @@
  * permissions and limitations under the License.
  */
 
+import { Intent } from 'ask-sdk-model';
 import { ControlResponseBuilder } from '../responseGeneration/ControlResponseBuilder';
 import { SystemAct } from '../systemActs/SystemAct';
 import { randomlyPick } from '../utils/ArrayUtils';
@@ -62,7 +63,11 @@ export interface ControlInitiativeHandler {
  * Base type for the customHandling Functions of a Control
  */
 export interface ControlInputHandlingProps {
+    /**
+     * Custom handling functions
+     */
     customHandlingFuncs?: ControlInputHandler[];
+
 }
 
 /**
