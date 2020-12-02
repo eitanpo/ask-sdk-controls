@@ -69,7 +69,7 @@ export class InteractionModelGenerator {
             return this;
         }
         throw new Error(
-            `Intent ${intent.name} is defined more than once and the definitions are not identical.`,
+            `Intent ${intent.name} is defined more than once but the definitions are not identical.`,
         );
     }
 

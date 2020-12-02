@@ -243,4 +243,8 @@ suite.only('QuestionnaireControl e2e tests', () => {
             'A: Are you happy with all answers?',
         );
     });
+
+    // test('no voice after touch', async () => {
+    //     //todo
+    // });
 });

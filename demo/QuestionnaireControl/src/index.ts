@@ -29,28 +29,23 @@ export namespace MultipleLists {
                 ],
                 choices: [
                     {
-                        id: 'often',
-                        aplColumnHeader: 'Freq',
-                        prompt: 'often',
+                        id: 'yes',
+                        aplColumnHeader: 'yes',
+                        prompt: 'yes',
                     },
                     {
-                        id: 'rarely',
-                        aplColumnHeader: 'Infreq',
-                        prompt: 'infrequently',
+                        id: 'no',
+                        aplColumnHeader: 'No',
+                        prompt: 'no',
                         selectedCharacter: '✖',
-                    },
-                    {
-                        id: 'skip',
-                        aplColumnHeader: 'Skip',
-                        prompt: 'skip',
-                        selectedCharacter: '-',
-                    },
+                    }                    
                 ], // TODO: should be consistent with ListControl. listItemIds vs choices.
             },
             interactionModel: {
-                slotType: 'FrequencyAnswer',
+                slotType: 'YesNo',
+                filteredSlotType: undefined,
                 targets: ['builtin_it', 'healthQuestionnaire'], // this should just be the control targets.  The question targets are in content.
-            }                    
+            }            
         });
 
 

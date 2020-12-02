@@ -83,18 +83,18 @@ export class DemoRootControl extends ContainerControl {
     }
 
     async handleFallbackEtc(input: ControlInput, resultBuilder: ControlResultBuilder) {
-        let requestType;
+        let requestDescription;
         if (InputUtil.isIntent(input)) {
-            requestType = (input.request as IntentRequest).intent.name;
+            requestDescription = (input.request as IntentRequest).intent.name;
         } else if (input.request.type === 'Alexa.Presentation.APL.UserEvent') {
-            requestType = '';
+            requestDescription = '';
             const event = input.request as interfaces.alexa.presentation.apl.UserEvent;
             const args = (event.arguments ?? []).join(', ');
-            requestType = `APL UserEvent with params ${args}`;
+            requestDescription = `APL UserEvent with params ${args}`;
         } else {
-            requestType = 'Input of unknown type';
+            requestDescription = 'Input of unknown type';
         }
-
-        resultBuilder.addAct(new LiteralContentAct(this, { promptFragment: `Unhandled ${requestType}.` }));
+        
+        resultBuilder.addAct(new LiteralContentAct(this, { promptFragment: `${requestDescription} was not handled by any control.` }));
     }
 }

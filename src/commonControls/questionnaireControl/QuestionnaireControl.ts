@@ -43,7 +43,7 @@ import { StringOrList } from '../../utils/BasicTypes';
 import { DeepRequired } from '../../utils/DeepRequired';
 import { InputUtil } from '../../utils/InputUtil';
 import { defaultIntentToValueMapper } from '../../utils/IntentUtils';
-import { failIf, okIf, verifyErrorIsGuardFailure } from '../../utils/Predicates';
+import { okIf, verifyErrorIsGuardFailure } from '../../utils/Predicates';
 import { QuestionnaireControlAPLPropsBuiltIns } from './QuestionnaireControlBuiltIns';
 import { Question, QuestionnaireContent } from './QuestionnaireControlStructs';
 import {
@@ -232,58 +232,79 @@ export class QuestionnaireControlInteractionModelProps {
     actions?: QuestionnaireControlActionProps;
 
     /**
-     * Slot type that includes entries for every choice provided by the questionnaire.
+     * Slot type that includes entries for the answers provided by the questionnaire.
      *
-     * If the questionnaire choices include words that overlap with AMAZON built-in
-     * intents, set filteredSlotType to avoid utterance conflicts, particularly if other
-     * parts of the skill expect to receive the conflicting built-in intent.
+     * Default: none
+     *
+     * If the questions are not strictly yes/no, `slotType` provides the values that the
+     * user can say.  Every legal answer should be present in `slotType` and all legal
+     * answers *that are not in conflict with other sample utterances* should be present
+     * in `filteredSlotType`.
+     *
+     * Example:
+     *
+     * If the questionnaire answers are "yes", "no" and "maybe", the `slotType`
+     * should have values for all three and the `filteredSlotType` should only have "maybe".
+     * ```
+     * interactionModel: {
+     *   slotType: 'YesNoMaybe',
+     *   filteredSlotType: 'Maybe'
+     * }
+     * ```
      */
-    slotType: string;
+    slotType?: string;
 
     /**
-     * Slot type that contains entries for questionnaire choices that do not conflict with
-     * built-in intents.
+     * Slot type that includes entries for the answers that do not conflict with
+     * the sample utterances of built-in intents or custom intents.
      *
      * Default: identical to `slotType`.
      *
      * Purpose:
-     * - During interaction-model-generation, the `filteredSlotType` is used
+     * - During interaction-model-generation the `filteredSlotType` is used
      *   in sample-utterances that would cause conflicts if the regular
      *   slotType was used.
-     * - If utterance conflicts persist, the skill will not receive the built-in intent
-     *   which may break other interactions.  But if nothing is expecting the built-in
-     *   intent the conflict is benign.
+     * - If utterance conflicts persist the skill will not receive the built-in intent
+     *   which may break other interactions.
      *
      * Example:
-     * if your questionnaire answers are "yes", "no" and "maybe" then the slotType
-     * should have values for all three but the filteredSlotType should only have "maybe".
      *
-     * TODO: make the prop design consistent with ListControl
-     * TODO: make this jsDoc consistent with ListControl
+     * If the questionnaire answers are "yes", "no" and "maybe", the `slotType`
+     * should have values for all three and `filteredSlotType` should only have "maybe".
+     * ```
+     * interactionModel: {
+     *   slotType: 'YesNoMaybe',
+     *   filteredSlotType: 'Maybe'
+     * }
+     * ```
      */
     filteredSlotType?: string;
+
+    // TODO: make the prop design consistent with ListControl
+    // TODO: make this jsDoc consistent with ListControl
 }
 
 export interface QuestionnaireControlInputHandlingProps extends ControlInputHandlingProps {
     /**
      * Function that maps an intent to a choice ID defined in for props.slotValue.
      *
-     * Default: IntentUtils.defaultIntentToValueMapper
+     * Default: `IntentUtils.defaultIntentToValueMapper` which converts "AMAZON.YesIntent"
+     * -> 'yes' and so on.  Generally,  "(.+)*<Value>Intent" -> 'value'.
      *
      * Purpose:
-     * * Some simple utterances intended for this control will be
-     *   interpreted as intents that are unknown to this control.  This
-     *   function allows mapping of them.
+     * * Some simple utterances intended for this control will be interpreted as intents
+     *   that are unknown to this control.  This function allows them to be recognized as
+     *   answers.
+     * * Whenever the questionnaire has asked a direct question to the user, e.g. "A: do
+     *   you like cats?" the subsequent intents will be tested using this function. If it
+     *   produces a valid answer id the input will be considered an answer to the question.
      *
      * Example:
-     * * if the list is managing a SlotType `ExtendedBoolean` with values
-     *   `yes | no | maybe` and filteredSlotType has been configured
-     *   correctly then a user-utterance of 'U: yes' will be interpreted as
-     *   an `AMAZON.YesIntent`.  To ensure that intent is correctly
-     *   processed, declare an intentToValueMapper that maps
-     *   `AMAZON.YesIntent -> 'yes'`.  The built-in logic of the ListControl
-     *   will thus treat AMAZON.YesIntent as the value 'yes', assuming that the
-     *   control is not actively asking a yes/no question.
+     * * Assume `slotType: 'YesNoMaybe'` and `filteredSlotType = 'Maybe'`. An utterance of
+     *    'U: yes' will be interpreted as an `AMAZON.YesIntent`.  To ensure that intent
+     *    can be interpreted as the 'yes' answer to a questionnaire question an
+     *    intentToChoiceMapper must be defined.  The default is sufficient for this case
+     *    and for most cases that involve intents with conventional naming.
      */
     intentToChoiceMapper: (intent: Intent) => string | undefined;
 
@@ -768,6 +789,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const intent = (input.request as IntentRequest).intent;
         const mappedValue = this.props.inputHandling.intentToChoiceMapper(intent)!;
         const choiceIndex = this.getChoiceIndexById(content, mappedValue);
+        assert(choiceIndex !== undefined);
         const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
         this.updateAnswer(question.id, mappedValue!, input, resultBuilder);
         resultBuilder.addAct(
@@ -786,44 +808,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return;
     }
 
-    // private isBareYesToAskedQuestion(input: ControlInput): boolean {
-    //     try {
-    //         okIf(this.state.activeInitiative?.actName === AskQuestionAct.name);
-    //         okIf(this.state.focusQuestionId !== undefined);
-    //         okIf(InputUtil.isBareYes(input));
-    //         return true;
-    //     } catch (e) {
-    //         return falseIfGuardFailed(e);
-    //     }
-    // }
-
-    // private handleBareYesToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
-    //     const content = this.getQuestionnaireContent(input);
-    //     const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
-    //     const positiveAnswer =
-    //         content.choiceForYesUtterance !== undefined && content.choiceForYesUtterance !== 'dummy'
-    //             ? content.choiceForYesUtterance
-    //             : content.choices[0].id;
-
-    //     const choiceIndex = this.getChoiceIndexById(content, positiveAnswer);
-    //     const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
-
-    //     this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
-    //     resultBuilder.addAct(
-    //         new QuestionAnsweredAct(this, {
-    //             questionId: question.id,
-    //             choiceId: positiveAnswer,
-    //             userAnsweredWithExplicitValue: false,
-    //             userMentionedQuestion: false,
-    //             renderedChoice: content.choices[choiceIndex].prompt,
-    //             renderedQuestion: content.choices[questionIndex].prompt,
-    //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
-    //         }),
-    //     );
-
-    //     this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
-    //     return;
-    // }
+    
 
     // private isBareNoToAskedQuestion(input: ControlInput): boolean {
     //     try {
@@ -936,6 +921,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
         if (content.choices.some((choice) => choice.id === valueStr)) {
             const choiceIndex = this.getChoiceIndexById(content, valueStr);
+            assert(choiceIndex !== undefined);
             const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
 
             this.updateAnswer(question.id, valueStr, input, resultBuilder);
@@ -957,6 +943,62 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
         return;
     }
+
+    // // handle the special case that the answer is captured by `feedback` item.
+    // private isFeedbackAnswerToSpecificQuestion(input: ControlInput): boolean {
+    //     try {
+    //         okIf(this.state.focusQuestionId !== undefined);
+    //         const question = this.getQuestionContentById(this.state.focusQuestionId, input);
+
+    //         okIf(
+    //             InputUtil.isIntent(
+    //                 input,
+    //                 SingleValueControlIntent.intentName(this.props.interactionModel.slotType),
+    //             ),
+    //         );
+    //         const { feedback, action, target, valueStr, valueType } = unpackSingleValueControlIntent(
+    //             (input.request as IntentRequest).intent,
+    //         );
+    //         okIf(InputUtil.targetIsUndefined(target));
+    //         okIf(InputUtil.valueTypeMatch(valueType, this.getSlotTypes()));
+    //         okIf(InputUtil.valueStrDefined(valueStr));
+    //         okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
+    //         okIf(InputUtil.actionIsMatchOrUndefined(action, this.props.interactionModel.actions.answer));
+    //         return true;
+    //     } catch (e) {
+    //         verifyErrorIsGuardFailure(e);
+    //         return false;
+    //     }
+    // }    
+       
+
+    // private handleBareYesToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
+    //     const content = this.getQuestionnaireContent(input);
+    //     const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
+    //     const positiveAnswer =
+    //         content.choiceForYesUtterance !== undefined && content.choiceForYesUtterance !== 'dummy'
+    //             ? content.choiceForYesUtterance
+    //             : content.choices[0].id;
+
+    //     const choiceIndex = this.getChoiceIndexById(content, positiveAnswer);
+    //     const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
+
+    //     this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
+    //     resultBuilder.addAct(
+    //         new QuestionAnsweredAct(this, {
+    //             questionId: question.id,
+    //             choiceId: positiveAnswer,
+    //             userAnsweredWithExplicitValue: false,
+    //             userMentionedQuestion: false,
+    //             renderedChoice: content.choices[choiceIndex].prompt,
+    //             renderedQuestion: content.choices[questionIndex].prompt,
+    //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+    //         }),
+    //     );
+
+    //     this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
+    //     return;
+    // }
 
     private isSpecificAnswerToSpecificQuestion(input: ControlInput): boolean {
         try {
@@ -999,6 +1041,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         // answers for a particular questionnaire.
         if (content.choices.some((choice) => choice.id === valueStr)) {
             const choiceIndex = this.getChoiceIndexById(content, valueStr);
+            assert(choiceIndex !== undefined);
             const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
             this.updateAnswer(targetedQuestion!.id, valueStr, input, resultBuilder);
 
@@ -1046,6 +1089,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const choiceId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![2];
 
         const choiceIndex = this.getChoiceIndexById(content, choiceId);
+        assert(choiceIndex !== undefined);
         const questionIndex = this.getQuestionIndexById(content, questionId);
 
         this.updateAnswer(questionId, choiceId, input, resultBuilder);
@@ -1385,13 +1429,16 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     // tsDoc - see Control
     public updateInteractionModel(generator: ControlInteractionModelGenerator, imData: ModelData) {
         generator.addControlIntent(new GeneralControlIntent(), imData);
-        generator.addControlIntent(
-            new SingleValueControlIntent(
-                this.props.interactionModel.slotType,
-                this.props.interactionModel.filteredSlotType,
-            ),
-            imData,
-        );
+
+        if (this.props.interactionModel.slotType !== 'dummy') {
+            generator.addControlIntent(
+                new SingleValueControlIntent(
+                    this.props.interactionModel.slotType,
+                    this.props.interactionModel.filteredSlotType,
+                ),
+                imData,
+            );
+        }
         generator.addYesAndNoIntents();
         if (this.props.interactionModel.targets.includes($.Target.Choice)) {
             generator.addValuesToSlotType(
@@ -1442,15 +1489,14 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return question;
     }
 
-    public getChoiceIndexById(content: QuestionnaireContent, answerId: string): number {
+    public getChoiceIndexById(content: QuestionnaireContent, answerId: string): number | undefined {
         const idx = content.choices.findIndex((choice) => choice.id === answerId);
-        assert(idx >= 0, `Not found. answerId=${answerId}`);
-        return idx;
+        return idx >= 0 ? idx : undefined;
     }
 
     public getQuestionIndexById(content: QuestionnaireContent, questionId: string): number {
         const idx = content.questions.findIndex((question) => question.id === questionId);
-        assert(idx >= 0, `Not found. answerId=${questionId}`);
+        assert(idx >= 0, `Not found. questionId=${questionId}`);
         return idx;
     }
 

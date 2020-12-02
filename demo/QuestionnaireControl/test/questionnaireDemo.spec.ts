@@ -50,24 +50,22 @@ suite('questionnaire demo skill', () => {
 
         await testTurn(
             invoker,
-            'U: I cough all the time',
-            TestInput.of(
-                SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
-            ),
+            'U: yes',
+            TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
             'A: OK, often for cough. Are you happy with all answers?',
         );
 
         // going back to change an answer.
         await testTurn(
             invoker,
-            'U: no, I never cough',
+            'U: no cough',
             TestInput.of(
-                SingleValueControlIntent.of('FrequencyAnswer', {
+                GeneralControlIntent.of({
+                    feedback: 'yes',
                     target: 'cough',
-                    FrequencyAnswer: 'rarely',
                 }),
             ),
-            'A: OK, infrequently for cough. Are you happy with all answers?',
+            'A: OK, infrequent cough. Are you happy with all answers?',
         );
 
         await testTurn(
