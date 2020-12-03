@@ -144,7 +144,7 @@ waitForDebugger();
 
 //--
 
-suite.only('QuestionnaireControl e2e tests', () => {
+suite('QuestionnaireControl e2e tests', () => {
     interface TestProps {
         confirmationRequired: boolean;
     }

@@ -16,7 +16,6 @@ import {
     ControlHandler,
     GeneralControlIntent,
     IntentBuilder,
-    SingleValueControlIntent,
     SkillInvoker,
     TestInput,
     testTurn,
@@ -26,7 +25,7 @@ import { MultipleLists } from '../src';
 
 waitForDebugger();
 
-suite('questionnaire demo skill', () => {
+suite.only('questionnaire demo skill', () => {
     test('general features', async () => {
         const controlManager = new MultipleLists.DemoControlManager();
         const requestHandler = new ControlHandler(controlManager);
@@ -52,7 +51,7 @@ suite('questionnaire demo skill', () => {
             invoker,
             'U: yes',
             TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
-            'A: OK, often for cough. Are you happy with all answers?',
+            'A: Are you happy with all answers?',
         );
 
         // going back to change an answer.
@@ -61,11 +60,11 @@ suite('questionnaire demo skill', () => {
             'U: no cough',
             TestInput.of(
                 GeneralControlIntent.of({
-                    feedback: 'yes',
+                    feedback: 'no',
                     target: 'cough',
                 }),
             ),
-            'A: OK, infrequent cough. Are you happy with all answers?',
+            'A: OK, no for cough. Are you happy with all answers?',
         );
 
         await testTurn(
@@ -75,12 +74,12 @@ suite('questionnaire demo skill', () => {
             'A: Great, thank you.',
         );
 
-        expect(controlManager.questionnaireControl.state.value).deep.equals({
+        expect(requestHandler.getSerializableControlStates().healthScreen.value).deep.equals({
             cough: {
-                choiceId: 'rarely',
+                choiceId: 'no',
             },
             headache: {
-                choiceId: 'often',
+                choiceId: 'yes',
             },
         });
     });
@@ -110,17 +109,15 @@ suite('questionnaire demo skill', () => {
             'A: Have you been coughing a lot?',
         );
 
-        expect(controlManager.questionnaireControl.state.value).deep.equals({
+        expect(requestHandler.getSerializableControlStates().healthScreen.value).deep.equals({
             headache: {
-                choiceId: 'rarely',
+                choiceId: 'no',
             },
         });
     });
 
     /**
-     * User ignores the prompt and directly answers a question of their choosing 
-     * Notes: 
-     
+     * User ignores the prompt and directly answers a question of their choosing
      */
     test('answering specific question', async () => {
         const controlManager = new MultipleLists.DemoControlManager();
@@ -136,16 +133,48 @@ suite('questionnaire demo skill', () => {
         await testTurn(
             invoker,
             'U: I cough all the time',
-            TestInput.of(
-                SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
-            ),
-            'A: OK, often for cough. Do you frequently have a headache?',
+            TestInput.of(GeneralControlIntent.of({ feedback: 'yes', target: 'cough' })),
+            'A: OK, yes for cough. Do you frequently have a headache?',
         );
 
-        expect(controlManager.questionnaireControl.state.value).deep.equals({
+        expect(requestHandler.getSerializableControlStates().healthScreen.value).deep.equals({
             cough: {
-                choiceId: 'often',
+                choiceId: 'yes',
             },
         });
     });
+
+    // TODO.
+    // /**
+    //  * User ignores the prompt and directly answers a question of their choosing, via an
+    //  * alternate value. ie say "I often cough" rather than "yes to cough".
+    //  *
+    //  * Also TODO: allow the value to come via preposition, cf via feedback.
+    //  */
+    // test('answering specific question', async () => {
+    //     const controlManager = new MultipleLists.DemoControlManager();
+    //     const requestHandler = new ControlHandler(controlManager);
+    //     const invoker = new SkillInvoker(requestHandler);
+    //     const response1 = await testTurn(
+    //         invoker,
+    //         'U: __',
+    //         TestInput.launchRequest(),
+    //         'A: Welcome. Do you frequently have a headache?',
+    //     );
+
+    //     await testTurn(
+    //         invoker,
+    //         'U: I cough all the time',
+    //         TestInput.of(
+    //             SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
+    //         ),
+    //         'A: OK, often for cough. Do you frequently have a headache?',
+    //     );
+
+    //     expect(controlManager.questionnaireControl.state.value).deep.equals({
+    //         cough: {
+    //             choiceId: 'often',
+    //         },
+    //     });
+    // });
 });

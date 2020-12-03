@@ -36,7 +36,23 @@ export namespace TwoListsIM {
         .setModelConfiguration({ fallbackIntentSensitivity: { level: 'HIGH' } })
 
         .addOrMergeSlotType({
-            name: 'Maybe',
+            name: 'YesNo',
+            values: [
+                {
+                    id: 'yes',
+                    name: {
+                        value: 'yes',
+                        synonyms: ['yeah', 'yep'],
+                    },
+                },
+                {
+                    id: 'no',
+                    name: {
+                        value: 'no',
+                        synonyms: ['nope', 'not ever'],
+                    },
+                },
+            ],
         })
 
         .addOrMergeSlotType({
@@ -163,4 +179,4 @@ if (require.main === module) {
     TwoListsIM.imGen.buildAndWrite('en-US-generated.json');
     console.log('Wrote ./en-US-generated.json');
 }
-[].push()
+[].push();

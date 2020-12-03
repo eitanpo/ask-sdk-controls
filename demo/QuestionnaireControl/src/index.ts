@@ -7,49 +7,6 @@ import { DemoRootControl } from '../../Common/src/DemoRootControl';
 
 export namespace MultipleLists {
     export class DemoControlManager extends ControlManager {
-
-        questionnaireControl = new QuestionnaireControl({
-            id: 'healthScreen',
-            
-            questionnaireData: {
-                questions: [
-                    {
-                        id: 'headache',
-                        targets: ['headache'],
-                        prompt: 'Do you frequently have a headache?',
-                        //TODO: APL string.
-                        promptShortForm: 'headache',
-                    },
-                    {
-                        id: 'cough',
-                        targets: ['cough'],
-                        prompt: 'Have you been coughing a lot?',
-                        promptShortForm: 'cough',
-                    },
-                ],
-                choices: [
-                    {
-                        id: 'yes',
-                        aplColumnHeader: 'yes',
-                        prompt: 'yes',
-                    },
-                    {
-                        id: 'no',
-                        aplColumnHeader: 'No',
-                        prompt: 'no',
-                        selectedCharacter: '✖',
-                    }                    
-                ], // TODO: should be consistent with ListControl. listItemIds vs choices.
-            },
-            interactionModel: {
-                slotType: 'YesNo',
-                filteredSlotType: undefined,
-                targets: ['builtin_it', 'healthQuestionnaire'], // this should just be the control targets.  The question targets are in content.
-            }            
-        });
-
-
-
         createControlTree(): Control {
             const rootControl = new DemoRootControl({ id: 'root' });
 
@@ -64,7 +21,50 @@ export namespace MultipleLists {
             //   Keep it as questionnaire for now and describe is as 'like a multi-list
             //   but with many special aspects'/
 
-            rootControl.addChild(this.questionnaireControl);
+            rootControl.addChild(
+                new QuestionnaireControl({
+                    id: 'healthScreen',
+
+                    questionnaireData: {
+                        questions: [
+                            {
+                                id: 'headache',
+                                targets: ['headache'],
+                                prompt: 'Do you frequently have a headache?',
+                                //TODO: APL string.
+                                promptShortForm: 'headache',
+                            },
+                            {
+                                id: 'cough',
+                                targets: ['cough'],
+                                prompt: 'Have you been coughing a lot?',
+                                promptShortForm: 'cough',
+                            },
+                        ],
+                        choices: [
+                            {
+                                id: 'yes',
+                                //TODO: values: .. allow additional values. default to id
+                                aplColumnHeader: 'yes', //TODO: default to id
+                                prompt: 'yes', //TODO: default to id
+                            },
+                            {
+                                id: 'no',
+                                aplColumnHeader: 'no',
+                                prompt: 'no',
+                            },
+                        ], // TODO: should be consistent with ListControl. listItemIds vs choices.
+                    },
+                    interactionModel: {
+                        slotType: 'YesNo', // TODO: allow multiple slotTypes? e.g. to support YesNo and Symptom.
+                        filteredSlotType: 'none',
+                        targets: ['builtin_it', 'healthQuestionnaire'], // this should just be the control targets.  The question targets are in content.
+                    },
+                    dialog: {
+                        confirmationRequired: false,
+                    },
+                }),
+            );
 
             return rootControl;
         }

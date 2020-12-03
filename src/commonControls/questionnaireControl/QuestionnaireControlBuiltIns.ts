@@ -40,7 +40,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
     export const Default: DeepRequired<QuestionnaireControlAPLProps> = {
         enabled: true,
 
-        askOneQuestionAct: (control: QuestionnaireControl, input: ControlInput) => {
+        askQuestion: (control: QuestionnaireControl, input: ControlInput) => {
             const aplContent = {
                 document: questionnaireDocumentGenerator(control, input),
                 dataSource: questionnaireDataSourceGenerator(control, input),
@@ -78,71 +78,54 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
     export function questionnaireDataSourceGenerator(control: QuestionnaireControl, input: ControlInput) {
         const content = control.getQuestionnaireContent(input);
 
-        const headerItems = [];
-        for (const choice of content.choices) {
-            headerItems.push({
-                type: 'Text',
-                text: choice.aplColumnHeader,
-                textColor: '#00FF00', // TODO: wire up colors.
-                fontSize: '@myFontSize',
-                width: '@columnWidth',
-                textAlign: 'center',
-            });
-        }
-
-        const header = {
-            type: 'Container',
-            direction: 'row',
-            wrap: 'wrap',
-            items: headerItems,
-        };
-
-        const questions = [];
+        const questionItems = [];
         for (const [index, question] of content.questions.entries()) {
-            // const currentChoiceIndex = Object.keys(control.state.value).includes(question.id)
-            //     ? control.getChoiceIndexById(content, control.state.value[question.id].answerId)
-            //     : -1;
-
-            const choiceButtons = [];
-            for (const [idx, choice] of content.choices.entries()) {
-                choiceButtons.push({
-                    type: 'ChoiceRadio',
-                    questionId: question.id,
-                    choiceId: choice.id,
-                    text: choice.selectedCharacter ?? '✔',
-                    index: idx,
-                    textColor: '#00FF00', // TODO: wire up colors.
-                    width: '@columnWidth',
-                    fontSize: '@myFontSize',
-                    textAlign: 'center',
-                });
-            }
-
-            questions.push({
+            questionItems.push({
+                primaryText: question.prompt,
                 questionId: question.id,
-                renderedIndex: `${index < 10 ? '&#32;&#32;' : ''}${index}.`, // add some spaces to small number for alignment.
-                type: 'question',
-                text: question.prompt,
-                fontSize: '@myFontSize',
-                selectedChoiceId: control.state.value[question.id]?.choiceId ?? '-1',
-                choices: choiceButtons,
+                selectedIndex:
+                    control.getChoiceIndexById(content, control.state.value[question.id]?.choiceId) ?? '-1',
             });
-
-            //...control.getQuestionContentById(question.id, input),
         }
 
-        const focusIndex =
-            control.state.focusQuestionId !== undefined
-                ? control.getQuestionIndexById(content, control.state.focusQuestionId)
-                : 0;
+        // return {
+        //     general: {
+        //         controlId: 'abc',
+        //         dataVersion: 1,
+        //         radioButtonSize: '85',
+        //         buttonColumnWidth: '124',
+        //         headerTitle: 'Please answer all that you can',
+        //         headerSubtitle: null,
+        //         headerBackButton: false,
+        //         nextButtonText: 'Next >',
+        //     },
+        //     questionData: {
+        //         type: 'dynamicIndexList',
+        //         listId: 'my-list-id',
+        //         startIndex: 0,
+        //         items: [
+        //             { primaryText: 'Question 0', questionId: '0', selectedIndex: -1 },
+        //             { primaryText: 'Question 1', questionId: '1', selectedIndex: -1 },
+        //             { primaryText: 'Question 2', questionId: '2', selectedIndex: -1 },
+        //             { primaryText: 'Question 3', questionId: '3', selectedIndex: -1 },
+        //         ],
+        //     },
+        // };
+
         return {
             wrapper: {
-                metadata: {
-                    title: 'What symptoms do you have?',
-                    focusIndex,
+                general: {
+                    controlId: control.id,
+                    dataVersion: 1,
+                    radioButtonSize: '85',
+                    //radioButtonColor: '',
+                    buttonColumnWidth: '124',
+                    headerTitle: 'Please answer all that you can',
+                    headerSubtitle: null,
+                    headerBackButton: false,
+                    nextButtonText: 'Complete >',
                 },
-                itemData: questions,
-                header,
+                questionData: questionItems,
             },
         };
 
@@ -181,151 +164,81 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
 
         return {
             type: 'APL',
-            version: '1.4',
+            version: '1.5',
             import: [
                 {
                     name: 'alexa-layouts',
                     version: '1.2.0',
                 },
             ],
-            resources: [
-                {
-                    dimensions: {
-                        myFontSize: '32dp',
-                        columnWidth: '100dp',
-                    },
-                },
-                {
-                    description: 'ControlId',
-                    // eslint-disable-next-line id-blacklist
-                    string: {
-                        controlId: 'healthScreen',
-                    },
-                },
-                {
-                    description: 'RadioButton dimensions',
-                    dimensions: {
-                        radioButtonDefaultHeight: '72dp',
-                        radioButtonDefaultWidth: '72dp',
-                    },
-                    colors: {
-                        radioButtonColorDarkTheme: '@colorBlack',
-                    },
-                },
-                {
-                    description: 'RadioButton dimensions - Tv',
-                    when: '${@viewportProfileGroup == @tv}',
-                    dimensions: {
-                        radioButtonDefaultHeight: '48dp',
-                        radioButtonDefaultWidth: '48dp',
-                    },
-                    colors: {
-                        radioButtonColorDarkTheme: '@colorBlackTVSafe',
-                    },
-                },
-            ],
-            styles: {
-                AlexaRadioButtonAVGStyle: {
-                    values: [
-                        {
-                            opacity: 1,
-                            isChecked: false,
-                        },
-                        {
-                            when: '${state.disabled}',
-                            opacity: '@opacityDisabled',
-                        },
-                        {
-                            when: '${state.checked}',
-                            isChecked: true,
-                        },
-                    ],
-                },
-            },
-            graphics: {
-                AlexaRadioButtonAVG: {
-                    type: 'AVG',
-                    version: '1.0',
-                    width: 48,
-                    height: 48,
-                    parameters: [
-                        'fillColorOff',
-                        'fillColorOn',
-                        'selectorColor',
-                        'highlightColorOff',
-                        'highlightColorOn',
-                        'isFocus',
-                        'isChecked',
-                    ],
-                    items: [
-                        {
-                            description: 'Radio Button highlight',
-                            type: 'group',
-                            items: [
-                                {
-                                    type: 'path',
-                                    fillOpacity: '${isFocus ? 0.2 : 0}',
-                                    fill: '${isChecked ? highlightColorOn : highlightColorOff}',
-                                    pathData:
-                                        'M48,24c0,13.255-10.745,24-24,24S0,37.255,0,24S10.745,0,24,0S48,10.745,48,24z',
-                                },
-                            ],
-                        },
-                        {
-                            description: 'Radio Button unselected state',
-                            type: 'group',
-                            items: [
-                                {
-                                    type: 'path',
-                                    fill: '${fillColorOff}',
-                                    fillOpacity: '${isChecked ? 0 : 1}',
-                                    pathData:
-                                        'M24,12c-6.627,0-12,5.373-12,12s5.373,12,12,12s12-5.373,12-12S30.627,12,24,12z M24,34\n\t\tc-5.523,0-10-4.477-10-10s4.477-10,10-10s10,4.477,10,10S29.523,34,24,34z',
-                                },
-                            ],
-                        },
-                        {
-                            description: 'Radio Button selected state',
-                            type: 'group',
-                            opacity: '${isChecked ? 1 : 0}',
-                            items: [
-                                {
-                                    type: 'path',
-                                    fill: '${fillColorOn}',
-                                    pathData:
-                                        'M36,24c0,6.627-5.373,12-12,12s-12-5.373-12-12s5.373-12,12-12S36,17.373,36,24z',
-                                },
-                                {
-                                    type: 'path',
-                                    fill: '${selectorColor}',
-                                    pathData:
-                                        'M30,24c0,3.314-2.686,6-6,6s-6-2.686-6-6s2.686-6,6-6S30,20.686,30,24z',
-                                },
-                            ],
-                        },
-                    ],
-                },
-            },
             layouts: {
-                AlexaRadioButton: {
+                AnswerButton: {
                     parameters: [
+                        {
+                            name: 'idx',
+                            description: 'Index of this button within the group',
+                            type: 'number',
+                            default: 0,
+                        },
+                    ],
+                    items: {
+                        type: 'AlexaRadioButton',
+                        checked: '${idx == selectedIndex}',
+                        theme: '${theme}',
+                        accessibilityLabel: '${accessibilityLabel}',
+                        radioButtonHeight: '${radioButtonHeight}',
+                        radioButtonWidth: '${radioButtonWidth}',
+                        radioButtonColor: '${radioButtonColor}',
+                        onPress: [
+                            {
+                                type: 'SetValue',
+                                property: 'selectedIndex',
+                                value: '${selectedIndex == idx ? -1 : idx}',
+                            },
+                            {
+                                type: 'SetValue',
+                                componentId: 'debugText',
+                                property: 'text',
+                                value: 'Question: ${questionId}  Selected:${selectedIndex}',
+                            },
+                            {
+                                type: 'SendEvent',
+                                arguments: [
+                                    '${wrapper.general.controlId}',
+                                    'radioClick',
+                                    '${questionId}',
+                                    '${selectedIndex}',
+                                ],
+                            },
+                        ],
+                    },
+                },
+                QuestionRow: {
+                    parameters: [
+                        {
+                            name: 'primaryText',
+                            description: 'Label',
+                            type: 'string',
+                            default: 'none',
+                        },
+                        {
+                            name: 'selectedIndex',
+                            description: 'Which choice is selected',
+                            type: 'number',
+                            default: -1,
+                        },
+                        {
+                            name: 'questionId',
+                            description: 'Which question does this row represent',
+                            type: 'string',
+                            default: 'none',
+                        },
                         {
                             name: 'theme',
                             description:
                                 'Colors will be changed depending on the specified theme (light/dark). Defaults to dark theme.',
                             type: 'string',
                             default: 'dark',
-                        },
-                        {
-                            name: 'primaryAction',
-                            description: 'The command that is triggered when the radioButton is selected.',
-                            type: 'any',
-                        },
-                        {
-                            name: 'accessibilityLabel',
-                            description:
-                                'Voice over will read this string when the user selects this component.',
-                            type: 'string',
                         },
                         {
                             name: 'radioButtonHeight',
@@ -340,208 +253,162 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                             default: '@radioButtonDefaultWidth',
                         },
                         {
+                            name: 'buttonColumnWidth',
+                            description: 'Width of the radioButton columns',
+                            type: 'dimension',
+                            default: '@radioButtonDefaultWidth',
+                        },
+                        {
                             name: 'radioButtonColor',
                             description: 'Selected color of the radioButton',
                             type: 'color',
                             default: "${theme != 'light' ? @colorAccent : '#1CA0CE'}",
                         },
-                        {
-                            name: 'entities',
-                            description: 'Array of entity data bind to this layout',
-                            type: 'any',
-                        },
-                        {
-                            name: 'isChecked',
-                            type: 'any',
-                        },
-                        {
-                            name: 'text',
-                            type: 'any',
-                        },
-                        {
-                            name: 'fontSize',
-                            type: 'any',
-                        },
-                        {
-                            name: 'textAlign',
-                            type: 'any',
-                        },
                     ],
-                    item: {
-                        type: 'TouchWrapper',
-                        width: '${radioButtonWidth}',
-                        height: '${radioButtonHeight}',
-                        accessibilityLabel: '${accessibilityLabel}',
-                        style: 'AlexaRadioButtonAVGStyle',
-                        bind: [
-                            {
-                                name: 'fillColorOff',
-                                type: 'color',
-                                value: "${theme != 'light' ? @colorGray500 : @colorGray600}",
-                            },
-                            {
-                                name: 'highlightColorOff',
-                                type: 'color',
-                                value: "${theme != 'light' ? @colorGray500 : @colorGray600}",
-                            },
-                            {
-                                name: 'selectorColor',
-                                type: 'color',
-                                value: "${theme != 'light' ? @radioButtonColorDarkTheme : @colorWhite}",
-                            },
-                        ],
-                        onPress: [
-                            {
-                                type: 'SetValue',
-                                property: 'checked',
-                                value: '${!event.source.checked}',
-                            },
-                            '${primaryAction}',
-                        ],
-                        onFocus: [
-                            {
-                                type: 'SetValue',
-                                property: 'isFocus',
-                                value: true,
-                            },
-                        ],
-                        onBlur: [
-                            {
-                                type: 'SetValue',
-                                property: 'isFocus',
-                                value: false,
-                            },
-                        ],
-                        onDown: [
-                            {
-                                type: 'SetValue',
-                                property: 'isFocus',
-                                value: true,
-                            },
-                        ],
-                        onUp: [
-                            {
-                                type: 'SetValue',
-                                property: 'isFocus',
-                                value: false,
-                            },
-                        ],
-                        items: [
-                            {
-                                type: 'Text',
-                                text: "${isChecked ? text : '&#9675;'}",
-                                color: '${radioButtonColor}',
-                                fontSize: '${fontSize}',
-                                textAlign: '${textAlign}',
-                            },
-                        ],
-                    },
-                },
-                ChoiceRadio: {
-                    parameters: ['questionId', 'choiceId', 'color', 'text', 'index', 'textAlign'],
-                    item: {
-                        type: 'AlexaRadioButton',
-                        radioButtonColor: '${color}',
-                        height: '50',
-                        isChecked: '${selectedChoiceId==choiceId}',
-                        onPress: ['${primaryAction}'],
-                        primaryAction: {
-                            type: 'Sequential',
-                            commands: [
+                    items: [
+                        {
+                            type: 'Container',
+                            direction: 'row',
+                            items: [
                                 {
-                                    type: 'SetValue',
-                                    property: 'selectedChoiceId',
-                                    value: '${choiceId}',
+                                    type: 'Container',
+                                    width: '${buttonColumnWidth}',
+                                    items: {
+                                        type: 'AnswerButton',
+                                        width: '${radioButtonWidth}',
+                                        height: '${radioButtonHeight}',
+                                        alignSelf: 'center',
+                                        idx: 0,
+                                        questionId: '${id}',
+                                    },
                                 },
                                 {
-                                    type: 'SendEvent',
-                                    arguments: ['@controlId', '${questionId}', '${choiceId}'],
+                                    type: 'Container',
+                                    width: '${buttonColumnWidth}',
+                                    items: {
+                                        type: 'AnswerButton',
+                                        width: '${radioButtonWidth}',
+                                        height: '${radioButtonHeight}',
+                                        alignSelf: 'center',
+                                        idx: 1,
+                                        questionId: '${id}',
+                                    },
+                                },
+                                {
+                                    type: 'Text',
+                                    text: '${primaryText}',
+                                    textAlignVertical: 'center',
                                 },
                             ],
                         },
-                        text: '${text}',
-                        textAlign: '${textAlign}',
-                    },
-                },
-                question: {
-                    parameters: ['id', 'renderedIndex', 'text', 'fontSize', 'selectedChoiceId', 'choices'],
-                    bind: {
-                        questionId: '${id}',
-                    },
-                    item: {
-                        type: 'Container',
-                        direction: 'row',
-                        alignItems: 'start',
-                        justifyContent: 'start',
-                        items: [
-                            {
-                                type: 'Container',
-                                direction: 'row',
-                                spacing: '50px',
-                                items: '${choices}',
-                            },
-                            {
-                                type: 'Text',
-                                text: '${text}',
-                                fontSize: '${fontSize}',
-                            },
-                        ],
-                    },
+                    ],
                 },
             },
             mainTemplate: {
-                parameters: ['payload'],
-                items: [
+                parameters: ['wrapper'],
+                bind: [
                     {
-                        type: 'Container',
-                        items: [
-                            {
-                                type: 'Text',
-                                text: '${payload.wrapper.metadata.title}',
-                            },
-                            '${payload.wrapper.header}',
-                            {
-                                type: 'ScrollView',
-                                height: '65vh',
-                                width: '100vw',
-                                checked: true,
-                                position: 'relative',
-                                onMount: [
-                                    {
-                                        type: 'ScrollToIndex',
-                                        componentId: 'textToUpdate',
-                                        index: '${payload.wrapper.metadata.focusIndex}',
-                                        align: 'center',
-                                    },
-                                ],
-                                item: [
-                                    {
-                                        type: 'Sequence',
-                                        height: '65vh',
-                                        width: '100vw',
-                                        id: 'textToUpdate',
-                                        items: '${payload.wrapper.itemData}',
-                                    },
-                                ],
-                            },
-                            {
-                                type: 'AlexaButton',
-                                buttonText: 'Done',
-                                buttonStyle: 'outlined',
-                                alignSelf: 'end',
-                                primaryAction: {
-                                    type: 'Sequential',
-                                    commands: [
-                                        {
-                                            type: 'SendEvent',
-                                            arguments: ['@controlId', 'completeXX'],
-                                        },
-                                    ],
-                                },
-                            },
-                        ],
+                        name: 'debug',
+                        value: true,
+                        type: 'boolean',
                     },
                 ],
+                item: {
+                    id: 'root',
+                    type: 'Container',
+                    width: '100vw',
+                    height: '100vh',
+                    items: [
+                        {
+                            type: 'AlexaBackground',
+                        },
+                        {
+                            type: 'AlexaHeader',
+                            id: 'heading1',
+                            headerDivider: true,
+                            headerBackButton: '${wrapper.general.headerBackButton}',
+                            headerBackButtonCommand: {
+                                type: 'SendEvent',
+                                arguments: ['goBack'],
+                            },
+                            headerTitle: '${wrapper.general.headerTitle}',
+                            headerSubtitle: '${wrapper.general.headerSubtitle}',
+                        },
+                        {
+                            type: 'Container',
+                            paddingLeft: '@spacingMedium',
+                            direction: 'row',
+                            items: [
+                                {
+                                    type: 'Text',
+                                    style: 'textStyleHint',
+                                    width: '${wrapper.general.buttonColumnWidth}',
+                                    text: 'Yes',
+                                    textAlign: 'center',
+                                },
+                                {
+                                    type: 'Text',
+                                    style: 'textStyleHint',
+                                    width: '${wrapper.general.buttonColumnWidth}',
+                                    text: 'No',
+                                    textAlign: 'center',
+                                },
+                                {
+                                    type: 'Text',
+                                    text: '${primaryText}',
+                                    textAlignVertical: 'center',
+                                },
+                            ],
+                        },
+                        {
+                            type: 'ScrollView',
+                            shrink: 1,
+                            grow: 1,
+                            items: [
+                                {
+                                    type: 'Sequence',
+                                    width: '100vw',
+                                    height: '80vh',
+                                    paddingLeft: '@spacingMedium',
+                                    data: '${wrapper.questionData}',
+                                    items: {
+                                        type: 'QuestionRow',
+                                        primaryText: '${data.primaryText}',
+                                        questionId: '${data.questionId}',
+                                        selectedIndex: '${data.selectedIndex}',
+                                        radioButtonColor: '${wrapper.general.radioButtonColor}',
+                                        radioButtonHeight: '${wrapper.general.radioButtonSize}',
+                                        radioButtonWidth: '${wrapper.general.radioButtonSize}',
+                                        buttonColumnWidth: '${wrapper.general.buttonColumnWidth}',
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            when: '${debug}',
+                            type: 'Text',
+                            id: 'debugText',
+                            text: 'debugInfo',
+                            position: 'absolute',
+                            bottom: '0vh',
+                        },
+                        {
+                            type: 'AlexaButton',
+                            id: 'nextButton',
+                            buttonText: '${wrapper.general.nextButtonText}',
+                            position: 'absolute',
+                            top: '10',
+                            right: '10',
+                            primaryAction: {
+                                type: 'SendEvent',
+                                arguments: [
+                                    '${wrapper.general.controlId}',
+                                    'complete'                                    
+                                ],
+                            },
+                        },
+                    ],
+                },
             },
         };
     }

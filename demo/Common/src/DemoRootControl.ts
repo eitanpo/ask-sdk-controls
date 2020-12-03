@@ -12,6 +12,7 @@
  */
 import { IntentRequest, interfaces } from 'ask-sdk-model';
 import {
+    AmazonIntent,
     ContainerControl,
     ContainerControlProps,
     ContentAct,
@@ -62,6 +63,11 @@ export class DemoRootControl extends ContainerControl {
             return true;
         }
 
+        if (InputUtil.isIntent(input, AmazonIntent.StopIntent)) {
+            this.handleFunc = this.handleStopIntent;
+            return true;
+        }
+
         this.handleFunc = this.handleFallbackEtc;
         return true;
     }
@@ -82,6 +88,10 @@ export class DemoRootControl extends ContainerControl {
         //nothing.
     }
 
+    async handleStopIntent(input: ControlInput, resultBuilder: ControlResultBuilder) {
+        resultBuilder.endSession();
+    }
+
     async handleFallbackEtc(input: ControlInput, resultBuilder: ControlResultBuilder) {
         let requestDescription;
         if (InputUtil.isIntent(input)) {
@@ -94,7 +104,11 @@ export class DemoRootControl extends ContainerControl {
         } else {
             requestDescription = 'Input of unknown type';
         }
-        
-        resultBuilder.addAct(new LiteralContentAct(this, { promptFragment: `${requestDescription} was not handled by any control.` }));
+
+        resultBuilder.addAct(
+            new LiteralContentAct(this, {
+                promptFragment: `${requestDescription} was not handled by any control.`,
+            }),
+        );
     }
 }

@@ -58,6 +58,20 @@ export abstract class InitiativeAct extends SystemAct {
 }
 
 /**
+ * The APL document is providing the initiative by offering input widgets.
+ * 
+ * Use this act if, and only if, 
+ * 1. a control received touch input
+ * 2. the APL document has input widgets and the user clearly knows they should press something
+ * 3. it is desirable to avoid disrupting the user with voice while they interact with the
+ *    screen.
+ */
+export class ActiveAPLInitiative extends InitiativeAct {
+    render(input: ControlInput, controlResponseBuilder: ControlResponseBuilder): void {
+    }
+}
+
+/**
  * Asks the user to provide a value.
  *
  * Default rendering (en-US): "What value for (renderedTarget)?" for both prompt & reprompt

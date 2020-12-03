@@ -137,6 +137,15 @@ export namespace InputUtil {
         return feedback === $.Feedback.Disaffirm;
     }
 
+
+    /**
+     * Test if the feedback is defined
+     * @param feedback - Feedback slot value ID
+     */
+    export function feedbackIsDefined(feedback: string | undefined): boolean {
+        return feedback !== undefined;
+    }
+
     /**
      * Test if the feedback is undefined
      * @param feedback - Feedback slot value ID

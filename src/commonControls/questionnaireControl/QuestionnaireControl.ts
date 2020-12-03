@@ -37,6 +37,7 @@ import { ControlInteractionModelGenerator } from '../../interactionModelGenerati
 import { ModelData, SharedSlotType } from '../../interactionModelGeneration/ModelTypes';
 import { Logger } from '../../logging/Logger';
 import { ControlResponseBuilder } from '../../responseGeneration/ControlResponseBuilder';
+import { ActiveAPLInitiative } from '../../systemActs/InitiativeActs';
 import { SystemAct } from '../../systemActs/SystemAct';
 import { assert } from '../../utils/AssertionUtils';
 import { StringOrList } from '../../utils/BasicTypes';
@@ -390,7 +391,7 @@ export class QuestionnaireControlAPLProps {
      */
     enabled?: boolean | ((input: ControlInput) => boolean);
 
-    askOneQuestionAct: AplPropNewStyle;
+    askQuestion: AplPropNewStyle;
 
     // requestValue?: AplPropNewStyle;
     // requestChangedValue?: AplPropNewStyle;
@@ -456,6 +457,7 @@ export class QuestionnaireControlState implements ControlState {
  */
 export class QuestionnaireControl extends Control implements InteractionModelContributor {
     state: QuestionnaireControlState = new QuestionnaireControlState();
+    inputWasAnswerByTouch: boolean = false;
 
     private rawProps: QuestionnaireControlProps;
     props: DeepRequired<QuestionnaireControlProps>;
@@ -649,16 +651,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             handle: this.handleBareAnswerToAskedQuestion,
         },
         {
-            name: 'BareYesToCompletionQuestion (builtin)',
-            canHandle: this.isBareYesToCompletionQuestion,
-            handle: this.handleCompletionRequest,
-        },
-        {
-            name: 'BareNoToCompletionQuestion (builtin)',
-            canHandle: this.isBareNoToCompletionQuestion,
-            handle: this.handleBareNoToCompletionQuestion,
-        },
-        {
             name: 'SpecificAnswerToAskedQuestion (builtin)',
             canHandle: this.isSpecificAnswerToAskedQuestion,
             handle: this.handleSpecificAnswerToAskedQuestion,
@@ -667,6 +659,11 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             name: 'SpecificAnswerToSpecificQuestion (builtin)',
             canHandle: this.isSpecificAnswerToSpecificQuestion,
             handle: this.handleSpecificAnswerToSpecificQuestion,
+        },
+        {
+            name: 'FeedbackAnswerToSpecificQuestion (builtin)',
+            canHandle: this.isFeedbackAnswerToSpecificQuestion,
+            handle: this.handleFeedbackAnswerToSpecificQuestion,
         },
         {
             name: 'SpecificAnswerByTouch (builtin)',
@@ -682,6 +679,16 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             name: 'Explicitly complete by touch (builtin)',
             canHandle: this.isCompletionRequestByTouch,
             handle: this.handleCompletionRequest,
+        },
+        {
+            name: 'BareYesToCompletionQuestion (builtin)',
+            canHandle: this.isBareYesToCompletionQuestion,
+            handle: this.handleCompletionRequest,
+        },
+        {
+            name: 'BareNoToCompletionQuestion (builtin)',
+            canHandle: this.isBareNoToCompletionQuestion,
+            handle: this.handleBareNoToCompletionQuestion,
         },
     ];
 
@@ -714,6 +721,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     // tsDoc - see Control
     async handle(input: ControlInput, resultBuilder: ControlResultBuilder): Promise<void> {
+        const content = this.getQuestionnaireContent(input);
         if (this.handleFunc === undefined) {
             log.error(
                 'QuestionnaireControl: handle called but this.handlerFunc not set.  are canHandle/handle out of sync?',
@@ -730,6 +738,12 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         // if (resultBuilder.hasInitiativeAct() !== true && (await this.canTakeInitiative(input)) === true) {
         //     await this.takeInitiative(input, resultBuilder);
         // }
+
+        const isDone = this.getFirstUnansweredQuestion(content) === undefined;
+        const confirmationRequired = this.evaluateBooleanProp(this.props.dialog.confirmationRequired, input);
+        if (isDone && !confirmationRequired) {
+            resultBuilder.addAct(new CompletedAct(this));
+        }
     }
 
     private isActivate(input: ControlInput): any {
@@ -808,8 +822,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return;
     }
 
-    
-
     // private isBareNoToAskedQuestion(input: ControlInput): boolean {
     //     try {
     //         okIf(this.state.activeInitiative?.actName === AskQuestionAct.name);
@@ -847,36 +859,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     //     this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
     //     return;
     // }
-
-    private isBareYesToCompletionQuestion(input: ControlInput): boolean {
-        try {
-            okIf(this.state.activeInitiative?.actName === AskIfCompleteAct.name);
-            okIf(InputUtil.isBareYes(input));
-            return true;
-        } catch (e) {
-            verifyErrorIsGuardFailure(e);
-            return false;
-        }
-    }
-
-    private isBareNoToCompletionQuestion(input: ControlInput): boolean {
-        try {
-            okIf(this.state.activeInitiative?.actName === AskIfCompleteAct.name);
-            okIf(InputUtil.isBareNo(input));
-            return true;
-        } catch (e) {
-            verifyErrorIsGuardFailure(e);
-            return false;
-        }
-    }
-
-    private handleBareNoToCompletionQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
-        resultBuilder.addAct(new AcknowledgeNotCompleteAct(this));
-
-        this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
-        this.state.requireExplicitCompletion = true; // we don't want to keep pestering the user so suppress completion questions.
-        return;
-    }
 
     //Not handled yet: providing a value & feedback of affirm/disaffirm that are not in sync.
     //Not handled yet: feedback values other than affirm/disaffirm
@@ -945,60 +927,55 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     }
 
     // // handle the special case that the answer is captured by `feedback` item.
-    // private isFeedbackAnswerToSpecificQuestion(input: ControlInput): boolean {
-    //     try {
-    //         okIf(this.state.focusQuestionId !== undefined);
-    //         const question = this.getQuestionContentById(this.state.focusQuestionId, input);
+    private isFeedbackAnswerToSpecificQuestion(input: ControlInput): boolean {
+        try {
+            okIf(InputUtil.isIntent(input, GeneralControlIntent.name));
+            const { feedback, action, target } = unpackGeneralControlIntent(
+                (input.request as IntentRequest).intent,
+            );
+            const content = this.getQuestionnaireContent(input);
 
-    //         okIf(
-    //             InputUtil.isIntent(
-    //                 input,
-    //                 SingleValueControlIntent.intentName(this.props.interactionModel.slotType),
-    //             ),
-    //         );
-    //         const { feedback, action, target, valueStr, valueType } = unpackSingleValueControlIntent(
-    //             (input.request as IntentRequest).intent,
-    //         );
-    //         okIf(InputUtil.targetIsUndefined(target));
-    //         okIf(InputUtil.valueTypeMatch(valueType, this.getSlotTypes()));
-    //         okIf(InputUtil.valueStrDefined(valueStr));
-    //         okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
-    //         okIf(InputUtil.actionIsMatchOrUndefined(action, this.props.interactionModel.actions.answer));
-    //         return true;
-    //     } catch (e) {
-    //         verifyErrorIsGuardFailure(e);
-    //         return false;
-    //     }
-    // }    
-       
+            okIf(InputUtil.targetIsDefined(target));
+            const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
+            okIf(targetedQuestion !== undefined);
 
-    // private handleBareYesToAskedQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
-    //     const content = this.getQuestionnaireContent(input);
-    //     const question = this.getQuestionContentById(this.state.focusQuestionId!, input);
-    //     const positiveAnswer =
-    //         content.choiceForYesUtterance !== undefined && content.choiceForYesUtterance !== 'dummy'
-    //             ? content.choiceForYesUtterance
-    //             : content.choices[0].id;
+            okIf(InputUtil.feedbackIsDefined(feedback));
+            okIf(content.choices.some((choice) => choice.id === feedback));
+            return true;
+        } catch (e) {
+            verifyErrorIsGuardFailure(e);
+            return false;
+        }
+    }
 
-    //     const choiceIndex = this.getChoiceIndexById(content, positiveAnswer);
-    //     const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
+    private handleFeedbackAnswerToSpecificQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
+        const content = this.getQuestionnaireContent(input);
 
-    //     this.updateAnswer(question.id, positiveAnswer, input, resultBuilder);
-    //     resultBuilder.addAct(
-    //         new QuestionAnsweredAct(this, {
-    //             questionId: question.id,
-    //             choiceId: positiveAnswer,
-    //             userAnsweredWithExplicitValue: false,
-    //             userMentionedQuestion: false,
-    //             renderedChoice: content.choices[choiceIndex].prompt,
-    //             renderedQuestion: content.choices[questionIndex].prompt,
-    //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
-    //         }),
-    //     );
+        const { feedback, action, target } = unpackGeneralControlIntent(
+            (input.request as IntentRequest).intent,
+        );
 
-    //     this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
-    //     return;
-    // }
+        assert(feedback !== undefined);
+        const choiceIndex = this.getChoiceIndexById(content, feedback);
+        assert(choiceIndex !== undefined);
+        const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
+        this.updateAnswer(targetedQuestion!.id, feedback, input, resultBuilder);
+
+        resultBuilder.addAct(
+            new QuestionAnsweredAct(this, {
+                questionId: targetedQuestion!.id,
+                choiceId: feedback,
+                userAnsweredWithExplicitValue: true,
+                userMentionedQuestion: true,
+                renderedChoice: content.choices[choiceIndex].prompt,
+                renderedQuestion: targetedQuestion!.prompt,
+                renderedQuestionShortForm: targetedQuestion!.promptShortForm,
+            }),
+        );
+
+        this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
+        return;
+    }
 
     private isSpecificAnswerToSpecificQuestion(input: ControlInput): boolean {
         try {
@@ -1019,6 +996,8 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
             okIf(InputUtil.valueTypeMatch(valueType, this.props.interactionModel.slotType));
             okIf(InputUtil.valueStrDefined(valueStr));
+            okIf(content.choices.some((choice) => choice.id === valueStr));
+
             okIf(InputUtil.feedbackIsMatchOrUndefined(feedback, [$.Feedback.Affirm, $.Feedback.Disaffirm]));
             okIf(InputUtil.actionIsMatchOrUndefined(action, this.props.interactionModel.actions.answer));
             return true;
@@ -1035,31 +1014,23 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             (input.request as IntentRequest).intent,
         );
 
-        // Accept the answer if it is a match to one of the listed choices, otherwise
-        // report error and ignore.  Note: being a match is a stronger condition than
-        // simply being an ER_MATCH as the answer slot type might have more values than
-        // answers for a particular questionnaire.
-        if (content.choices.some((choice) => choice.id === valueStr)) {
-            const choiceIndex = this.getChoiceIndexById(content, valueStr);
-            assert(choiceIndex !== undefined);
-            const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
-            this.updateAnswer(targetedQuestion!.id, valueStr, input, resultBuilder);
+        const choiceIndex = this.getChoiceIndexById(content, valueStr);
+        assert(choiceIndex !== undefined);
+        const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
+        this.updateAnswer(targetedQuestion!.id, valueStr, input, resultBuilder);
 
-            resultBuilder.addAct(
-                new QuestionAnsweredAct(this, {
-                    questionId: targetedQuestion!.id,
-                    choiceId: valueStr,
-                    userAnsweredWithExplicitValue: true,
-                    userMentionedQuestion: true,
-                    renderedChoice: content.choices[choiceIndex].prompt,
-                    renderedQuestion: targetedQuestion!.prompt,
-                    renderedQuestionShortForm: targetedQuestion!.promptShortForm,
-                }),
-            );
-        } else {
-            throw new Error('todo');
-            //resultBuilder.addAct(new InvalidAnswerAct(this, {}));
-        }
+        resultBuilder.addAct(
+            new QuestionAnsweredAct(this, {
+                questionId: targetedQuestion!.id,
+                choiceId: valueStr,
+                userAnsweredWithExplicitValue: true,
+                userMentionedQuestion: true,
+                renderedChoice: content.choices[choiceIndex].prompt,
+                renderedQuestion: targetedQuestion!.prompt,
+                renderedQuestionShortForm: targetedQuestion!.promptShortForm,
+            }),
+        );
+
         this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
         return;
     }
@@ -1070,11 +1041,16 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             okIf(InputUtil.isAPLUserEventWithMatchingControlId(input, this.id));
             const userEvent = input.request as interfaces.alexa.presentation.apl.UserEvent;
             okIf(userEvent.arguments !== undefined);
-            okIf(userEvent.arguments.length === 3);
-            const questionId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![1];
-            const choiceId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![2];
+            okIf(userEvent.arguments.length === 4);
+            const kind = (input.request as interfaces.alexa.presentation.apl.UserEvent)
+                .arguments![1] as string;
+            const questionId = (input.request as interfaces.alexa.presentation.apl.UserEvent)
+                .arguments![2] as string;
+            const choiceIndex = (input.request as interfaces.alexa.presentation.apl.UserEvent)
+                .arguments![3] as number;
+            okIf(kind === 'radioClick');
             okIf(content.questions.find((q) => q.id === questionId) !== undefined);
-            okIf(content.choices.find((c) => c.id === choiceId) !== undefined);
+            okIf(choiceIndex >= -1 && choiceIndex < content.choices.length);
             return true;
         } catch (e) {
             verifyErrorIsGuardFailure(e);
@@ -1085,27 +1061,37 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     private handleSpecificAnswerByTouch(input: ControlInput, resultBuilder: ControlResultBuilder) {
         // The SendEvent provides arguments: [controlId, questionId, choiceId]
         const content = this.getQuestionnaireContent(input);
-        const questionId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![1];
-        const choiceId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![2];
-
-        const choiceIndex = this.getChoiceIndexById(content, choiceId);
+        const questionId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![2];
+        const choiceIndex = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![3];
         assert(choiceIndex !== undefined);
         const questionIndex = this.getQuestionIndexById(content, questionId);
-
+        const choiceId = choiceIndex === -1 ? undefined : content.choices[choiceIndex].id;
         this.updateAnswer(questionId, choiceId, input, resultBuilder);
-        resultBuilder.addAct(
-            new QuestionAnsweredAct(this, {
-                questionId,
-                choiceId,
-                userAnsweredWithExplicitValue: false,
-                userMentionedQuestion: false,
-                renderedChoice: content.choices[choiceIndex].prompt,
-                renderedQuestion: content.questions[questionIndex].prompt,
-                renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
-            }),
-        );
+        // if (choiceId) {
+        //     resultBuilder.addAct(
+        //         new QuestionAnsweredAct(this, {
+        //             questionId,
+        //             choiceId,
+        //             userAnsweredWithExplicitValue: false,
+        //             userMentionedQuestion: false,
+        //             renderedChoice: content.choices[choiceIndex].prompt,
+        //             renderedQuestion: content.questions[questionIndex].prompt,
+        //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+        //         }),
+        //     );
+        // } else {
+        //     resultBuilder.addAct(
+        //         new AnswerClearedAct(this, {
+        //             questionId,
+        //             userMentionedQuestion: false,
+        //             renderedQuestion: content.questions[questionIndex].prompt,
+        //             renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+        //         }),
+        //     );
+        // }
 
         this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
+        this.inputWasAnswerByTouch = true;
         return;
     }
 
@@ -1131,8 +1117,8 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             const userEvent = input.request as interfaces.alexa.presentation.apl.UserEvent;
             okIf(userEvent.arguments !== undefined);
             okIf(userEvent.arguments.length === 2);
-            const buttonId = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![1];
-            okIf(buttonId === 'complete');
+            const kind = (input.request as interfaces.alexa.presentation.apl.UserEvent).arguments![1];
+            okIf(kind === 'complete');
             return true;
         } catch (e) {
             verifyErrorIsGuardFailure(e);
@@ -1141,7 +1127,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     }
 
     private async handleCompletionRequest(input: ControlInput, resultBuilder: ControlResultBuilder) {
-        // The SendEvent provides arguments: [controlId, questionId, choiceId]
         const content = this.getQuestionnaireContent(input);
 
         const validationResult = await evaluateValidationProp(this.props.valid, this.state, input);
@@ -1151,6 +1136,36 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         } else {
             resultBuilder.addAct(new QuestionnaireCompletionRejectedAct(this, { ...validationResult }));
         }
+        return;
+    }
+
+    private isBareYesToCompletionQuestion(input: ControlInput): boolean {
+        try {
+            okIf(this.state.activeInitiative?.actName === AskIfCompleteAct.name);
+            okIf(InputUtil.isBareYes(input));
+            return true;
+        } catch (e) {
+            verifyErrorIsGuardFailure(e);
+            return false;
+        }
+    }
+
+    private isBareNoToCompletionQuestion(input: ControlInput): boolean {
+        try {
+            okIf(this.state.activeInitiative?.actName === AskIfCompleteAct.name);
+            okIf(InputUtil.isBareNo(input));
+            return true;
+        } catch (e) {
+            verifyErrorIsGuardFailure(e);
+            return false;
+        }
+    }
+
+    private handleBareNoToCompletionQuestion(input: ControlInput, resultBuilder: ControlResultBuilder) {
+        resultBuilder.addAct(new AcknowledgeNotCompleteAct(this));
+
+        this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
+        this.state.requireExplicitCompletion = true; // we don't want to keep pestering the user so suppress completion questions.
         return;
     }
 
@@ -1228,13 +1243,16 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
         // const renderedQuestion = this.props.questionRenderer.call(this, this.state.focusQuestionId, input);
 
-        const initiativeAct = new AskQuestionAct(this, {
-            questionnaireContent: content,
-            answers: this.state.value,
-            questionId: this.state.focusQuestionId,
-        });
-        this.state.activeInitiative = { actName: initiativeAct.constructor.name };
+        const initiativeAct = this.inputWasAnswerByTouch
+            ? new ActiveAPLInitiative(this)
+            : new AskQuestionAct(this, {
+                  questionnaireContent: content,
+                  answers: this.state.value,
+                  questionId: this.state.focusQuestionId,
+              });
+
         resultBuilder.addAct(initiativeAct);
+        this.state.activeInitiative = { actName: initiativeAct.constructor.name };
     }
 
     private wantsToAskIfComplete(input: ControlInput): boolean {
@@ -1242,9 +1260,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         try {
             okIf(this.isActive(input));
             okIf(this.evaluateBooleanProp(this.props.dialog.confirmationRequired, input));
-            const firstUnansweredQuestion = content.questions.find(
-                (q) => this.state.value[q.id] === undefined,
-            );
+            const firstUnansweredQuestion = this.getFirstUnansweredQuestion(content);
             return firstUnansweredQuestion === undefined;
         } catch (e) {
             verifyErrorIsGuardFailure(e);
@@ -1357,6 +1373,8 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             builder.addRepromptFragment(
                 this.evaluatePromptProp(act, this.props.reprompts.acknowledgeNotCompleteAct, input),
             );
+        } else if (act instanceof ActiveAPLInitiative) {
+            //nothing
         }
         // } else if (act instanceof RequestChangedValueByListAct) {
         //     const prompt = this.evaluatePromptProp(act, this.props.prompts.requestChangedValue, input);
@@ -1421,7 +1439,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             this.evaluateBooleanProp(this.props.apl.enabled, input) === true &&
             getSupportedInterfaces(input.handlerInput.requestEnvelope)['Alexa.Presentation.APL']
         ) {
-            const renderedAPL = this.evaluateAPLPropNewStyle(this.props.apl.askOneQuestionAct, input);
+            const renderedAPL = this.evaluateAPLPropNewStyle(this.props.apl.askQuestion, input);
             builder.addAPLRenderDocumentDirective(this.id, renderedAPL.document, renderedAPL.dataSource);
         }
     }
@@ -1473,11 +1491,15 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     public updateAnswer(
         questionId: string,
-        choiceId: string,
+        choiceId: string | undefined,
         input: ControlInput,
         resultBuilder: ControlResultBuilder,
     ): void {
-        this.state.value[questionId] = { choiceId };
+        if (choiceId !== undefined) {
+            this.state.value[questionId] = { choiceId };
+        } else {
+            delete this.state.value[questionId];
+        }
     }
 
     public getQuestionContentById(questionId: string, input: ControlInput): DeepRequired<Question> {
@@ -1517,6 +1539,10 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             return false;
         }
         return true;
+    }
+
+    private getFirstUnansweredQuestion(content: QuestionnaireContent) {
+        return content.questions.find((q) => this.state.value[q.id] === undefined);
     }
 
     // TODO: can probably refactor these back to inline.

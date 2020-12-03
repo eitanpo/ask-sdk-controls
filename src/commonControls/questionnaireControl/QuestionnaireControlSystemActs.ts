@@ -103,6 +103,25 @@ export interface QuestionAnsweredActPayload {
     renderedChoice: string;
 }
 
+export interface AnswerClearedActPayload {
+    questionId: string;
+    
+    /**
+     * if true, the user gave the answer out-of-order by mentioning a specific question.
+     * if false, the user directly answered the asked question
+     *
+     * Purpose:
+     *  - may help to decide whether to include the question in the implicit feedback.
+     *
+     * Example:
+     *  - if true, prompt = "OK, five stars for customer service."
+     *  - whereas if false, prompt= "OK."
+     */
+    userMentionedQuestion: boolean;
+    renderedQuestion: string;
+    renderedQuestionShortForm: string;    
+}
+
 /**
  * Communicates that an answer was received.
  *
@@ -114,6 +133,18 @@ export interface QuestionAnsweredActPayload {
 export class QuestionAnsweredAct extends ContentAct {
     payload: QuestionAnsweredActPayload;
     constructor(control: Control, payload: QuestionAnsweredActPayload) {
+        super(control);
+        this.payload = payload;
+    }
+
+    render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
+        throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
+    }
+}
+
+export class AnswerClearedAct extends ContentAct {
+    payload: AnswerClearedActPayload;
+    constructor(control: Control, payload: AnswerClearedActPayload) {
         super(control);
         this.payload = payload;
     }

@@ -175,11 +175,15 @@ function handleValueControlIntent(controlIntent: SingleValueControlIntent, contr
     const filteredSlotTypeReplacement: string = `{${filteredSlotType}}`;
     intent.samples = intent.samples || [];
     samples.map((sample) => {
-        intent.samples!.push(
-            sample
-                .replace('[[valueSlotType]]', slotTypeReplacement)
-                .replace('[[filteredValueSlotType]]', filteredSlotTypeReplacement),
-        );
+        if (filteredSlotType === 'none' && sample.includes('[[filteredValueSlotType]]')) {
+            return;
+        } else {
+            intent.samples!.push(
+                sample
+                    .replace('[[valueSlotType]]', slotTypeReplacement)
+                    .replace('[[filteredValueSlotType]]', filteredSlotTypeReplacement),
+            );
+        }
     });
     return intent;
 }
