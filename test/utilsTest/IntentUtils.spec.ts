@@ -13,7 +13,7 @@
 
 import { expect } from 'chai';
 import { suite, test } from 'mocha';
-import { IntentBuilder, defaultIntentToValueMapper } from '../../src/utils/IntentUtils';
+import { defaultIntentToValueMapper, IntentBuilder } from '../../src/utils/IntentUtils';
 
 suite('== IntentUtils.IntentNameToValueMapper ==', () => {
     test("WeatherIntent -> 'weather'", async () => {
@@ -21,9 +21,7 @@ suite('== IntentUtils.IntentNameToValueMapper ==', () => {
     });
 
     test("GetWeatherIntent -> 'getWeather'", async () => {
-        expect('getWeather').equal(
-            defaultIntentToValueMapper(IntentBuilder.of('GetWeatherIntent')),
-        );
+        expect('getWeather').equal(defaultIntentToValueMapper(IntentBuilder.of('GetWeatherIntent')));
     });
 
     test("AMAZON.YesIntent -> 'yes'", async () => {
@@ -31,9 +29,7 @@ suite('== IntentUtils.IntentNameToValueMapper ==', () => {
     });
 
     test("AMAZON.ShuffleOffIntent -> 'shuffleOff'", async () => {
-        expect('shuffleOff').equal(
-            defaultIntentToValueMapper(IntentBuilder.of('AMAZON.ShuffleOffIntent')),
-        );
+        expect('shuffleOff').equal(defaultIntentToValueMapper(IntentBuilder.of('AMAZON.ShuffleOffIntent')));
     });
 
     test("Namespace1.namespace2.ThingIntent -> 'thing'", async () => {
@@ -43,14 +39,10 @@ suite('== IntentUtils.IntentNameToValueMapper ==', () => {
     });
 
     test("SomethingRandom -> 'somethingRandom'", async () => {
-        expect('somethingRandom').equal(
-            defaultIntentToValueMapper(IntentBuilder.of('SomethingRandom')),
-        );
+        expect('somethingRandom').equal(defaultIntentToValueMapper(IntentBuilder.of('SomethingRandom')));
     });
 
-    test('result not in list of expected values', async () => {
-        expect(undefined).equal(
-            defaultIntentToValueMapper(IntentBuilder.of('weatherIntent')),
-        );
+    test('weatherIntent -> weather', async () => {
+        expect('weather').equal(defaultIntentToValueMapper(IntentBuilder.of('weatherIntent')));
     });
 });
