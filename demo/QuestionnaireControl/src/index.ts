@@ -28,16 +28,19 @@ export namespace MultipleLists {
                     questionnaireData: {
                         questions: [
                             {
+                                
                                 id: 'headache',
                                 targets: ['headache'],
+                                //TODO: support functions on prompt/label/shortForm
                                 prompt: 'Do you frequently have a headache?',
-                                //TODO: APL string.
+                                visualLabel: 'Frequent headache?',
                                 promptShortForm: 'headache',
                             },
                             {
                                 id: 'cough',
                                 targets: ['cough'],
                                 prompt: 'Have you been coughing a lot?',
+                                visualLabel: 'Cough most days?',
                                 promptShortForm: 'cough',
                             },
                         ],

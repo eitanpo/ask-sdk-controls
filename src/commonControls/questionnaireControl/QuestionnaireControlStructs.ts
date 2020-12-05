@@ -1,3 +1,7 @@
+import { ControlInput } from '../../controls/ControlInput';
+import { StringOrList } from '../../utils/BasicTypes';
+import { QuestionnaireControl } from './QuestionnaireControl';
+
 export interface Question {
     /**
      * Identifier
@@ -39,31 +43,34 @@ export interface Question {
      */
     targets: string[];
 
-  
     /**
      * Rendered form of the question for use in prompts.
      *
      * - This prompt should be a complete sentence with leading uppercase and trailing question-mark.
-     *
-     * Examples: 'Do you like cats?', 'How do you rate the service?'
      */
-    prompt: string;
+    prompt: StringOrList | ((this: QuestionnaireControl, input: ControlInput) => StringOrList);
 
     /**
      * Short-form rendering of the question for use in prompts.
      *
      * This prompt should be a phrase without leading uppercase and no punctuation.
      *
+     * When rendering ValueSetAct, the short form of the question is used
+     *  construct a prompt like "OK, yes for cats."
+     * 
      * Example:
-     *  When providing implicit confirmation, the short form of the question may be used:
      * ```
      *  questionPrompt: "Do you like cats?"
      *  questionPromptShortForm: "cats"
      * ```
-     * So that a prompt can be constructed like "OK, yes for cats.  [next question]"
      *
      */
-    promptShortForm: string;
+    promptShortForm: string | ((this: QuestionnaireControl, input: ControlInput) => string);
+
+    /**
+     * Rendered form of the question for use on screen.
+     */
+    visualLabel: string | ((this: QuestionnaireControl, input: ControlInput) => string);
 }
 
 export interface Choice {

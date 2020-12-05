@@ -97,8 +97,6 @@ export interface QuestionAnsweredActPayload {
      *  - whereas if false, prompt= "OK."
      */
     userMentionedQuestion: boolean;
-
-    renderedQuestion: string;
     renderedQuestionShortForm: string;
     renderedChoice: string;
 }
@@ -118,7 +116,6 @@ export interface AnswerClearedActPayload {
      *  - whereas if false, prompt= "OK."
      */
     userMentionedQuestion: boolean;
-    renderedQuestion: string;
     renderedQuestionShortForm: string;    
 }
 

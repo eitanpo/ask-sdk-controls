@@ -37,7 +37,7 @@ import { ControlInteractionModelGenerator } from '../../interactionModelGenerati
 import { ModelData, SharedSlotType } from '../../interactionModelGeneration/ModelTypes';
 import { Logger } from '../../logging/Logger';
 import { ControlResponseBuilder } from '../../responseGeneration/ControlResponseBuilder';
-import { ActiveAPLInitiative } from '../../systemActs/InitiativeActs';
+import { ActiveAPLInitiative as ActiveAPLInitiativeAct } from '../../systemActs/InitiativeActs';
 import { SystemAct } from '../../systemActs/SystemAct';
 import { assert } from '../../utils/AssertionUtils';
 import { StringOrList } from '../../utils/BasicTypes';
@@ -510,7 +510,11 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             prompts: {
                 //TODO: i18n the defaults.
                 askQuestionAct: (act: AskQuestionAct, input: ControlInput) =>
-                    act.control.getQuestionContentById(act.payload.questionId, input).prompt,
+                    act.control.evaluatePromptProp(
+                        act,
+                        act.control.getQuestionContentById(act.payload.questionId, input).prompt,
+                        input,
+                    ),
 
                 questionAnsweredAct: (act: QuestionAnsweredAct, input: ControlInput) => {
                     if (!act.payload.userAnsweredWithExplicitValue && !act.payload.userMentionedQuestion) {
@@ -565,7 +569,11 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             },
             reprompts: {
                 askQuestionAct: (act: AskQuestionAct, input: ControlInput) =>
-                    act.control.getQuestionContentById(act.payload.questionId, input).prompt,
+                    act.control.evaluatePromptProp(
+                        act,
+                        act.control.getQuestionContentById(act.payload.questionId, input).prompt,
+                        input,
+                    ),
 
                 questionAnsweredAct: (act: QuestionAnsweredAct, input: ControlInput) => {
                     if (!act.payload.userAnsweredWithExplicitValue && !act.payload.userMentionedQuestion) {
@@ -813,8 +821,10 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
                 userAnsweredWithExplicitValue: false,
                 userMentionedQuestion: false,
                 renderedChoice: content.choices[choiceIndex].prompt,
-                renderedQuestion: content.choices[questionIndex].prompt,
-                renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+                renderedQuestionShortForm: this.evaluatePromptShortForm(
+                    content.questions[questionIndex].promptShortForm,
+                    input,
+                ),
             }),
         );
 
@@ -907,6 +917,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             const questionIndex = this.getQuestionIndexById(content, this.state.focusQuestionId!);
 
             this.updateAnswer(question.id, valueStr, input, resultBuilder);
+
             resultBuilder.addAct(
                 new QuestionAnsweredAct(this, {
                     questionId: question.id,
@@ -914,8 +925,10 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
                     userAnsweredWithExplicitValue: true,
                     userMentionedQuestion: false,
                     renderedChoice: content.choices[choiceIndex].prompt,
-                    renderedQuestion: content.questions[questionIndex].prompt,
-                    renderedQuestionShortForm: content.questions[questionIndex].promptShortForm,
+                    renderedQuestionShortForm: this.evaluatePromptShortForm(
+                        content.questions[questionIndex].promptShortForm,
+                        input,
+                    ),
                 }),
             );
         } else {
@@ -959,17 +972,21 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const choiceIndex = this.getChoiceIndexById(content, feedback);
         assert(choiceIndex !== undefined);
         const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
-        this.updateAnswer(targetedQuestion!.id, feedback, input, resultBuilder);
+        assert(targetedQuestion !== undefined);
+        this.updateAnswer(targetedQuestion.id, feedback, input, resultBuilder);
+        const questionIndex = this.getQuestionIndexById(content, targetedQuestion.id);
 
         resultBuilder.addAct(
             new QuestionAnsweredAct(this, {
-                questionId: targetedQuestion!.id,
+                questionId: targetedQuestion.id,
                 choiceId: feedback,
                 userAnsweredWithExplicitValue: true,
                 userMentionedQuestion: true,
                 renderedChoice: content.choices[choiceIndex].prompt,
-                renderedQuestion: targetedQuestion!.prompt,
-                renderedQuestionShortForm: targetedQuestion!.promptShortForm,
+                renderedQuestionShortForm: this.evaluatePromptShortForm(
+                    content.questions[questionIndex].promptShortForm,
+                    input,
+                ),
             }),
         );
 
@@ -1017,17 +1034,20 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const choiceIndex = this.getChoiceIndexById(content, valueStr);
         assert(choiceIndex !== undefined);
         const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
-        this.updateAnswer(targetedQuestion!.id, valueStr, input, resultBuilder);
-
+        assert(targetedQuestion !== undefined)
+        this.updateAnswer(targetedQuestion.id, valueStr, input, resultBuilder);
+        const questionIndex = this.getQuestionIndexById(content, targetedQuestion.id);
         resultBuilder.addAct(
             new QuestionAnsweredAct(this, {
-                questionId: targetedQuestion!.id,
+                questionId: targetedQuestion.id,
                 choiceId: valueStr,
                 userAnsweredWithExplicitValue: true,
                 userMentionedQuestion: true,
                 renderedChoice: content.choices[choiceIndex].prompt,
-                renderedQuestion: targetedQuestion!.prompt,
-                renderedQuestionShortForm: targetedQuestion!.promptShortForm,
+                renderedQuestionShortForm: this.evaluatePromptShortForm(
+                    content.questions[questionIndex].promptShortForm,
+                    input,
+                ),
             }),
         );
 
@@ -1244,7 +1264,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         // const renderedQuestion = this.props.questionRenderer.call(this, this.state.focusQuestionId, input);
 
         const initiativeAct = this.inputWasAnswerByTouch
-            ? new ActiveAPLInitiative(this)
+            ? new ActiveAPLInitiativeAct(this)
             : new AskQuestionAct(this, {
                   questionnaireContent: content,
                   answers: this.state.value,
@@ -1373,9 +1393,10 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             builder.addRepromptFragment(
                 this.evaluatePromptProp(act, this.props.reprompts.acknowledgeNotCompleteAct, input),
             );
-        } else if (act instanceof ActiveAPLInitiative) {
-            //nothing
+        } else if (act instanceof ActiveAPLInitiativeAct) {
+            builder.setDisplayUsed();
         }
+
         // } else if (act instanceof RequestChangedValueByListAct) {
         //     const prompt = this.evaluatePromptProp(act, this.props.prompts.requestChangedValue, input);
         //     const reprompt = this.evaluatePromptProp(act, this.props.reprompts.requestChangedValue, input);

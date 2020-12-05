@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-import { Intent, IntentRequest, interfaces } from 'ask-sdk-model';
+import { Intent, IntentRequest, interfaces, Request } from 'ask-sdk-model';
 import { Strings as $ } from '../constants/Strings';
 import { ControlInput } from '../controls/ControlInput';
 import { AmazonIntent } from '../intents/AmazonBuiltInIntent';
@@ -343,4 +343,5 @@ export namespace InputUtil {
         const { valueStr, erMatch } = unpackSingleValueControlIntent((input.request as IntentRequest).intent);
         return { valueStr: valueStr!, erMatch: erMatch! };
     }
+
 }

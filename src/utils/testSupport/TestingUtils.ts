@@ -261,6 +261,26 @@ export class TestInput {
     public static userEvent(userEvent: UserEvent): ControlInput {
         return dummyControlInput(userEvent);
     }
+
+    public static simpleUserEvent(args: any[], token = 'token', locale = 'en-US'): ControlInput {
+        
+        const userEvent: UserEvent = {
+            type: 'Alexa.Presentation.APL.UserEvent',
+            requestId: makeRequestId(),
+            timestamp: '2019-10-04T18:48:22Z',
+            locale: locale,
+            arguments: args,
+            components: {},
+            source: {
+                type: 'TouchWrapper',
+                handler: 'Press',
+                id: 'HouseTextButton',
+            },
+            token: token,
+        }
+        
+        return dummyControlInput(userEvent);
+    }
 }
 
 // TODO: API: unify with SkillInvoker

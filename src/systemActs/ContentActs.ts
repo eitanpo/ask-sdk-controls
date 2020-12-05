@@ -314,7 +314,7 @@ export class ValueConfirmedAct<T> extends ContentAct {
     }
 
     render(input: ControlInput, controlResponseBuilder: ControlResponseBuilder): void {
-        controlResponseBuilder.addPromptFragment('Great.');
+        controlResponseBuilder.addPromptFragment('Great.');        
     }
 }
 

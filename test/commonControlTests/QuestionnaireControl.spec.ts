@@ -160,13 +160,14 @@ suite('QuestionnaireControl e2e tests', () => {
                                 id: 'headache',
                                 targets: ['headache'],
                                 prompt: 'Do you frequently have a headache?',
-                                //TODO: APL string.
+                                visualLabel: 'Do you frequently have a headache?',
                                 promptShortForm: 'headache',
                             },
                             {
                                 id: 'cough',
                                 targets: ['cough'],
                                 prompt: 'Have you been coughing a lot?',
+                                visualLabel: 'Have you been coughing a lot?',
                                 promptShortForm: 'cough',
                             },
                         ],
@@ -216,7 +217,12 @@ suite('QuestionnaireControl e2e tests', () => {
             'A: Have you been coughing a lot?',
         );
 
-        await testTurn(invoker, 'U: yes', TestInput.of(IntentBuilder.of('AMAZON.YesIntent')), 'A: ');
+        await testTurn(
+            invoker,
+            'U: yes',
+            TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
+            'A: Great, thank you.',
+        );
     });
 
     test('basics, confirmation=true', async () => {

@@ -1,3 +1,4 @@
+import { ResponseFactory } from 'ask-sdk-core';
 import { expect } from 'chai';
 /*
  * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -13,7 +14,10 @@ import { expect } from 'chai';
  */
 import { suite, test } from 'mocha';
 import {
+    ActiveAPLInitiative as ActiveAPLInitiativeAct,
+    ContainerControl,
     ControlHandler,
+    ControlResponseBuilder,
     GeneralControlIntent,
     IntentBuilder,
     SkillInvoker,
@@ -21,11 +25,12 @@ import {
     testTurn,
     waitForDebugger,
 } from '../../../src';
+import { QuestionnaireControl } from '../../../src/commonControls/questionnaireControl/QuestionnaireControl';
 import { MultipleLists } from '../src';
 
 waitForDebugger();
 
-suite.only('questionnaire demo skill', () => {
+suite('questionnaire demo skill', () => {
     test('general features', async () => {
         const controlManager = new MultipleLists.DemoControlManager();
         const requestHandler = new ControlHandler(controlManager);
@@ -51,7 +56,7 @@ suite.only('questionnaire demo skill', () => {
             invoker,
             'U: yes',
             TestInput.of(IntentBuilder.of('AMAZON.YesIntent')),
-            'A: Are you happy with all answers?',
+            'A: Great, thank you.',
         );
 
         // going back to change an answer.
@@ -64,14 +69,7 @@ suite.only('questionnaire demo skill', () => {
                     target: 'cough',
                 }),
             ),
-            'A: OK, no for cough. Are you happy with all answers?',
-        );
-
-        await testTurn(
-            invoker,
-            "U: I'm done",
-            TestInput.of(GeneralControlIntent.of({ action: 'builtin_complete' })),
-            'A: Great, thank you.',
+            'A: OK, no for cough. Great, thank you.',
         );
 
         expect(requestHandler.getSerializableControlStates().healthScreen.value).deep.equals({
@@ -142,6 +140,53 @@ suite.only('questionnaire demo skill', () => {
                 choiceId: 'yes',
             },
         });
+    });
+
+    /**
+     * User presses a radio button to answer an arbitrary question.
+     */
+    test('answering by touch', async () => {
+        const controlManager = new MultipleLists.DemoControlManager();
+        const requestHandler = new ControlHandler(controlManager);
+        const invoker = new SkillInvoker(requestHandler);
+        const response1 = await testTurn(
+            invoker,
+            'U: __',
+            TestInput.launchRequest(),
+            'A: Welcome. Do you frequently have a headache?',
+        );
+
+        const response = await testTurn(
+            invoker,
+            'U: I cough all the time',
+            TestInput.simpleUserEvent(['healthScreen', 'radioClick', 'cough', 1]), //questionId='cough', answerIndex=1
+            'A: ',
+        );
+
+        expect((response.directive = undefined)); // no APL after touch events.  It is already updated on client side.
+
+        expect(requestHandler.getSerializableControlStates().healthScreen.value).deep.equals({
+            cough: {
+                choiceId: 'no',
+            },
+        });
+    });
+
+    /**
+     * Ensure that ResponseBuilder.isDisplayUsed is set when ActiveAPLInitiative produced.
+     */
+    test('ActiveAPLInitiative causes response.isDisplayUsed = true', async () => {
+        const controlManager = new MultipleLists.DemoControlManager();
+        const root = controlManager.createControlTree() as ContainerControl;
+        const questionnaireControl = root.children[0] as QuestionnaireControl;
+        const touchInput = TestInput.simpleUserEvent(['healthScreen', 'radioClick', 'cough', 1]);
+        const responseBuilder = new ControlResponseBuilder(ResponseFactory.init());
+        questionnaireControl.renderAct(
+            new ActiveAPLInitiativeAct(questionnaireControl),
+            touchInput,
+            responseBuilder,
+        );
+        expect(responseBuilder.isDisplayUsed()).true; // display marked as used.
     });
 
     // TODO.

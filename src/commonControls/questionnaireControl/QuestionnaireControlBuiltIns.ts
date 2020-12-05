@@ -81,7 +81,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
         const questionItems = [];
         for (const [index, question] of content.questions.entries()) {
             questionItems.push({
-                primaryText: question.prompt,
+                primaryText: question.visualLabel,
                 questionId: question.id,
                 selectedIndex:
                     control.getChoiceIndexById(content, control.state.value[question.id]?.choiceId) ?? '-1',
@@ -401,10 +401,7 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                             right: '10',
                             primaryAction: {
                                 type: 'SendEvent',
-                                arguments: [
-                                    '${wrapper.general.controlId}',
-                                    'complete'                                    
-                                ],
+                                arguments: ['${wrapper.general.controlId}', 'complete'],
                             },
                         },
                     ],
