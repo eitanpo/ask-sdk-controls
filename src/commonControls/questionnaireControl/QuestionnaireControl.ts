@@ -56,6 +56,16 @@ import {
     SuggestContinueAct,
 } from './QuestionnaireControlSystemActs';
 
+// TODO: robust spec & solution for 'invalid' answers
+// -- is seems important to support 'needs all answers' vs 'any answers is ok'. and
+// why not be general?
+// -- a label needs to be present on APL.
+// -- if APL button is pressed it needs to round-trip so that the screen updates.
+// -- validation logic runs server-side.
+
+// TODO: experiment with updateData / updateDynamicList rather than pushing whole new
+// document.  --- can we just push the dataSource again?
+
 /**
  * Future feature ideas:
  *  - pre-configured yes/no questionnaireControl
@@ -395,7 +405,7 @@ export class QuestionnaireControlPromptProps {
 
 //Note: we pass control to make it easier for lambda-syntax props (as 'this' isn't wired
 //correctly for lambda-style props)
-//TODO: replicate this pattern elsewhere.
+//TODO: standardize on a func-prop pattern.  likely set `this` as the control AND pass the control as param.
 export type AplContent = { document: any; dataSource: any };
 export type AplContentFunc = (control: QuestionnaireControl, input: ControlInput) => AplContent;
 export type AplPropNewStyle = AplContent | AplContentFunc;
@@ -508,7 +518,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
                 choices: [],
             },
             required: true,
-            valid: () => true, //TODO: also implement a builtin for "all questions answered".
+            valid: () => true, //TODO: also implement a builtin for "all questions must be answered".
 
             interactionModel: {
                 slotType: 'dummy',
@@ -1524,8 +1534,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         this.state = new QuestionnaireControlState();
         this.state.value = {};
     }
-
-    //TODO: actions should also be updated automatically as for targets.
 
     public updateAnswer(
         questionId: string,
