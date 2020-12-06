@@ -26,7 +26,7 @@ import {
     unpackSingleValueControlIntent,
 } from '../intents/SingleValueControlIntent';
 import { ControlInteractionModelGenerator } from '../interactionModelGeneration/ControlInteractionModelGenerator';
-import { ModelData, SharedSlotType } from '../interactionModelGeneration/ModelTypes';
+import { ModelData } from '../interactionModelGeneration/ModelTypes';
 import { Logger } from '../logging/Logger';
 import { ControlResponseBuilder } from '../responseGeneration/ControlResponseBuilder';
 import {
@@ -869,17 +869,10 @@ export class DateControl extends Control implements InteractionModelContributor 
         generator.addControlIntent(new SingleValueControlIntent(AmazonBuiltInSlotType.DATE), imData);
         generator.addYesAndNoIntents();
 
-        if (this.props.interactionModel.targets.includes('date')) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('DATE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_DATE', { returnObjects: true }),
-            );
+        for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
-    }
-
-    // tsDoc - see InteractionModelContributor
-    getTargetIds(): string[] {
-        return this.props.interactionModel.targets;
+        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);
     }
 }
 

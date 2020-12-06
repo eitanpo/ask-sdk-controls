@@ -1003,11 +1003,14 @@ export class ValueControl extends Control implements InteractionModelContributor
         generator.addControlIntent(new SingleValueControlIntent(this.props.slotType), imData);
         generator.addControlIntent(new GeneralControlIntent(), imData);
         generator.addYesAndNoIntents();
-    }
+        
 
-    // tsDoc - see InteractionModelContributor
-    getTargetIds(): string[] {
-        return this.props.interactionModel.targets;
+        generator.ensureSlotIsDefined(this.id, this.props.slotType);
+
+        for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
+        }
+        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);        
     }
 }
 

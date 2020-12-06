@@ -25,7 +25,6 @@ const log = new Logger('HelloWorld:InteractionModel');
 
 export namespace ListDemo1IM {
     export const imGen = new ControlInteractionModelGenerator()
-        .buildCoreModelForControls(new ListDemo1.DemoControlManager())
         .withInvocationName('controls demo')
         .addIntent({ name: 'AMAZON.StopIntent' })
         .addIntent({ name: 'AMAZON.NavigateHomeIntent' })
@@ -41,9 +40,9 @@ export namespace ListDemo1IM {
             name: 'HelloIntent',
             samples: ['Say hello', 'Say hi'],
         })
-
         .addOrMergeSlotType(yesNoMaybeSlotType)
-        .addOrMergeSlotType(filteredYesNoMaybeSlotType);
+        .addOrMergeSlotType(filteredYesNoMaybeSlotType)
+        .buildCoreModelForControls(new ListDemo1.DemoControlManager());
 }
 
 // If launched directly, build and write to a file

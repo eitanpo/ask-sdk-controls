@@ -13,7 +13,6 @@
 
 import { getSupportedInterfaces } from 'ask-sdk-core';
 import { Intent, IntentRequest, interfaces } from 'ask-sdk-model';
-import i18next from 'i18next';
 import _ from 'lodash';
 import { Strings as $ } from '../../constants/Strings';
 import {
@@ -34,7 +33,7 @@ import {
     unpackSingleValueControlIntent,
 } from '../../intents/SingleValueControlIntent';
 import { ControlInteractionModelGenerator } from '../../interactionModelGeneration/ControlInteractionModelGenerator';
-import { ModelData, SharedSlotType } from '../../interactionModelGeneration/ModelTypes';
+import { ModelData } from '../../interactionModelGeneration/ModelTypes';
 import { Logger } from '../../logging/Logger';
 import { ControlResponseBuilder } from '../../responseGeneration/ControlResponseBuilder';
 import { ActiveAPLInitiative as ActiveAPLInitiativeAct } from '../../systemActs/InitiativeActs';
@@ -149,7 +148,7 @@ export interface QuestionnaireControlActionProps {
     /**
      * Action slot value IDs that are associated with the "start/open/resume the questionnaire" capability.
      *
-     * Default: ['builtin_start', 'builtin_open', 'builtin_resume'] //TODO. add these to IM
+     * Default: ['builtin_start', 'builtin_resume']
      */
     activate?: string[];
 
@@ -175,7 +174,7 @@ export class QuestionnaireControlInteractionModelProps {
     /**
      * Target-slot values associated with this Control as a whole.
      *
-     * Some of these targets are used to associate utterances to 'the questionnaire' as a whole.
+     * These targets are used to associate utterances to 'the questionnaire' as a whole.
      * For example, if the user says "open the questionnaire", it will be parsed as a
      * `GeneralControlIntent` with slot values `action = open` and `target = questionnaire`.
      *
@@ -205,12 +204,33 @@ export class QuestionnaireControlInteractionModelProps {
     targets?: string[];
 
     /**
+     * All target slots that are used by individual questions.
+     *
+     * Default: []
+     *
+     * Purpose:
+     *  - the user may give an answer to a specific question, e.g. "I like cats" which is
+     *    parsed as a SingleValueControlIntent with value=like target=cats.  To achieve
+     *    this, the slotType associated with this control must include the value 'like'
+     *    and the targets slotType must include 'cats'.
+     *
+     * Why can't the targets be pulled from questionnaire content?
+     *  - because the questionnaire content is dynamic at runtime, but the complete list
+     *    of targets must be known at build time.
+     *
+     * Control behavior:
+     * - at build time, all the targets listed here will be verified to exist in the
+     *   interaction model.
+     */
+    allQuestionTargets?: string[];
+
+    /**
      * Action slot-values associated to the capabilities of the control as a whole
      *
      * Default:
      * ```
      * {
-     *    administer: [], //TODO.
+     *    activate: ['builtin_start', 'builtin_resume'],
      *    complete: ['builtin_complete']
      * }
      * ```
@@ -493,7 +513,8 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             interactionModel: {
                 slotType: 'dummy',
                 filteredSlotType: 'dummy',
-                targets: [$.Target.Choice, $.Target.It],
+                targets: [$.Target.It, $.Target.Questionnaire],
+                allQuestionTargets: [],
                 actions: {
                     activate: [$.Action.Start, $.Action.Resume],
                     complete: [$.Action.Complete],
@@ -1034,7 +1055,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         const choiceIndex = this.getChoiceIndexById(content, valueStr);
         assert(choiceIndex !== undefined);
         const targetedQuestion = content.questions.find((q) => q.targets.includes(target!));
-        assert(targetedQuestion !== undefined)
+        assert(targetedQuestion !== undefined);
         this.updateAnswer(targetedQuestion.id, valueStr, input, resultBuilder);
         const questionIndex = this.getQuestionIndexById(content, targetedQuestion.id);
         resultBuilder.addAct(
@@ -1479,20 +1500,21 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             );
         }
         generator.addYesAndNoIntents();
-        if (this.props.interactionModel.targets.includes($.Target.Choice)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_CHOICE', { returnObjects: true }),
-            );
-        }
-        if (this.props.interactionModel.actions.answer.includes($.Action.Select)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.ACTION,
-                i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_SLOT_VALUES_ACTION_SELECT', { returnObjects: true }),
-            );
-        }
+        
+        generator.ensureSlotIsDefined(this.id, this.props.interactionModel.slotType);
+        generator.ensureSlotIsNoneOrDefined(this.id, this.props.interactionModel.filteredSlotType);
 
-        //todo: add actions for all questions.
+        for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
+        }
+        
+        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);
+        
+        generator.ensureSlotValueIDsAreDefined(
+            this.id,
+            'target',
+            this.props.interactionModel.allQuestionTargets,
+        );
     }
 
     /**
@@ -1504,11 +1526,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     }
 
     //TODO: actions should also be updated automatically as for targets.
-
-    // tsDoc - see InteractionModelContributor
-    public getTargetIds() {
-        return this.props.interactionModel.targets;
-    }
 
     public updateAnswer(
         questionId: string,

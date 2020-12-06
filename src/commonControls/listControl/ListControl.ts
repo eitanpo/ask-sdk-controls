@@ -10,7 +10,6 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-import { defaultIntentToValueMapper } from '../../utils/IntentUtils';
 import { getSupportedInterfaces } from 'ask-sdk-core';
 import { Intent, IntentRequest, interfaces } from 'ask-sdk-model';
 import i18next from 'i18next';
@@ -30,7 +29,7 @@ import {
     unpackSingleValueControlIntent,
 } from '../../intents/SingleValueControlIntent';
 import { ControlInteractionModelGenerator } from '../../interactionModelGeneration/ControlInteractionModelGenerator';
-import { ModelData, SharedSlotType } from '../../interactionModelGeneration/ModelTypes';
+import { ModelData } from '../../interactionModelGeneration/ModelTypes';
 import { ListFormatting } from '../../intl/ListFormat';
 import { Logger } from '../../logging/Logger';
 import { ControlResponseBuilder } from '../../responseGeneration/ControlResponseBuilder';
@@ -53,6 +52,7 @@ import { StringOrList } from '../../utils/BasicTypes';
 import { evaluateCustomHandleFuncs, _logIfBothTrue } from '../../utils/ControlUtils';
 import { DeepRequired } from '../../utils/DeepRequired';
 import { InputUtil } from '../../utils/InputUtil';
+import { defaultIntentToValueMapper } from '../../utils/IntentUtils';
 import { falseIfGuardFailed, okIf, StateConsistencyError } from '../../utils/Predicates';
 import { ListControlAPLPropsBuiltIns } from './ListControlAPL';
 
@@ -283,7 +283,7 @@ export class ListControlInteractionModelProps {
          * Function that maps an intent to a valueId for props.slotValue.
          *
          * Default: IntentUtils.defaultIntentToValueMapper
-         * 
+         *
          * Purpose:
          * * Some simple utterances intended for this control will be
          *   interpreted as intents that are unknown to this control.  This
@@ -440,7 +440,7 @@ export class ListControl extends Control implements InteractionModelContributor 
         }
 
         this.rawProps = props;
-        this.props = ListControl.mergeWithDefaultProps(props);        
+        this.props = ListControl.mergeWithDefaultProps(props);
     }
 
     /**
@@ -465,7 +465,7 @@ export class ListControl extends Control implements InteractionModelContributor 
                 targets: [$.Target.Choice, $.Target.It],
                 slotValueConflictExtensions: {
                     filteredSlotType: props.slotType,
-                    intentToValueMapper: defaultIntentToValueMapper
+                    intentToValueMapper: defaultIntentToValueMapper,
                 },
             },
             prompts: {
@@ -717,7 +717,7 @@ export class ListControl extends Control implements InteractionModelContributor 
                 intent,
             );
             okIf(mappedValue !== undefined);
-            okIf(this.getChoicesList(input).includes(mappedValue))
+            okIf(this.getChoicesList(input).includes(mappedValue));
             this.handleFunc = this.handleMappedBareValue;
             return true;
         } catch (e) {
@@ -1207,26 +1207,19 @@ export class ListControl extends Control implements InteractionModelContributor 
         generator.addControlIntent(new OrdinalControlIntent(), imData);
         generator.addYesAndNoIntents();
 
-        if (this.props.interactionModel.targets.includes($.Target.Choice)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('LIST_CONTROL_DEFAULT_SLOT_VALUES_TARGET_CHOICE', { returnObjects: true }),
-            );
-        }
+        generator.ensureSlotIsDefined(this.id, this.props.slotType);
+        generator.ensureSlotIsDefined(
+            this.id,
+            this.props.interactionModel.slotValueConflictExtensions.filteredSlotType,
+        );
 
-        // TODO: review why this is done different to set/change
-        if (this.props.interactionModel.actions.set.includes($.Action.Select)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.ACTION,
-                i18next.t('LIST_CONTROL_DEFAULT_SLOT_VALUES_ACTION_SELECT', { returnObjects: true }),
-            );
+        for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
+        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);
+
+        
     }
 
-    // tsDoc - see InteractionModelContributor
-    getTargetIds() {
-        return this.props.interactionModel.targets;
-    }
-
-    // TODO: feature: use slot elicitation when requesting.
+    // TODO: feature: consider using slot elicitation when requesting.
 }

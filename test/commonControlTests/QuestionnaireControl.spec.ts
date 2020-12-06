@@ -11,6 +11,7 @@
  * permissions and limitations under the License.
  */
 
+import { expect } from 'chai';
 import { suite, test } from 'mocha';
 import { GeneralControlIntent } from '../../src';
 import { QuestionnaireControl } from '../../src/commonControls/questionnaireControl/QuestionnaireControl';
@@ -250,7 +251,47 @@ suite('QuestionnaireControl e2e tests', () => {
         );
     });
 
-    // test('no voice after touch', async () => {
-    //     //todo
+    /**
+     * User presses a radio button to answer an arbitrary question.
+     * 1. state is updates
+     * 2. no voice prompt.
+     * 3. no new APL.
+     */
+    test('answering by touch', async () => {
+        const controlManager = createControlManager({ confirmationRequired: false });
+        const requestHandler = new ControlHandler(controlManager);
+        const invoker = new SkillInvoker(requestHandler);
+
+        const response = await testTurn(
+            invoker,
+            'U: I cough all the time',
+            TestInput.simpleUserEvent(['question', 'radioClick', 'cough', 1]), //questionId='cough', answerIndex=1
+            'A: ',
+        );
+
+        expect((response.directive = undefined)); // no APL after touch events.  It is already updated on client side.
+
+        expect(requestHandler.getSerializableControlStates().question.value).deep.equals({
+            cough: {
+                choiceId: 'no',
+            },
+        });
+    });
+
+    // /**
+    //  * Ensure that ResponseBuilder.isDisplayUsed is set when ActiveAPLInitiative produced.
+    //  */
+    // test('ActiveAPLInitiative causes response.isDisplayUsed = true', async () => {
+    //     const controlManager = new MultipleLists.DemoControlManager();
+    //     const root = controlManager.createControlTree() as ContainerControl;
+    //     const questionnaireControl = root.children[0] as QuestionnaireControl;
+    //     const touchInput = TestInput.simpleUserEvent(['healthScreen', 'radioClick', 'cough', 1]);
+    //     const responseBuilder = new ControlResponseBuilder(ResponseFactory.init());
+    //     questionnaireControl.renderAct(
+    //         new ActiveAPLInitiativeAct(questionnaireControl),
+    //         touchInput,
+    //         responseBuilder,
+    //     );
+    //     expect(responseBuilder.isDisplayUsed()).true; // display marked as used.
     // });
 });

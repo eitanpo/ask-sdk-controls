@@ -785,39 +785,13 @@ export class DateRangeControl extends ContainerControl implements InteractionMod
         generator.addControlIntent(new SingleValueControlIntent(AmazonBuiltInSlotType.DATE), imData);
         generator.addYesAndNoIntents();
 
-        if (this.props.interactionModel.targets.self.includes($.Target.Date)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('DATE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_DATE', { returnObjects: true }),
-            );
+        for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
-        if (this.props.interactionModel.targets.self.includes($.Target.DateRange)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('DATE_RANGE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_DATE_RANGE', {
-                    returnObjects: true,
-                }),
-            );
-        }
-        if (this.props.interactionModel.targets.startDate.includes($.Target.StartDate)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('DATE_RANGE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_START_DATE', {
-                    returnObjects: true,
-                }),
-            );
-        }
-        if (this.props.interactionModel.targets.endDate.includes($.Target.EndDate)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('DATE_RANGE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_END_DATE', { returnObjects: true }),
-            );
-        }
-    }
 
-    // tsDoc - see InteractionModelContributor
-    getTargetIds(): string[] {
-        return this.props.interactionModel.targets.self;
+        for (const [targetCategories, actionSlotIds] of Object.entries(this.props.interactionModel.targets)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'target', actionSlotIds);
+        }
     }
 
     private getStartDateFromChild(): string | undefined {

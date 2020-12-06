@@ -24,7 +24,6 @@ const log = new Logger('HelloWorld:InteractionModel');
 
 export namespace TwoListsIM {
     export const imGen = new ControlInteractionModelGenerator()
-        .buildCoreModelForControls(new MultipleLists.DemoControlManager())
         .withInvocationName('controls demo')
         .addIntent({ name: 'AMAZON.StopIntent' })
         .addIntent({ name: 'AMAZON.NavigateHomeIntent' })
@@ -148,29 +147,44 @@ export namespace TwoListsIM {
             ],
         })
 
-        .addValuesToSlotType(
-            'target',
-            {
-                id: 'headache',
-                name: {
-                    value: 'headache',
-                    synonyms: [
-                        'headaches',
-                        'sore head',
-                        'lots of headaches',
-                        'bad headaches',
-                        'really bad headaches',
-                    ],
+        .addOrMergeSlotType({
+            name: 'target',
+            values: [
+                {
+                    id: 'headache',
+                    name: {
+                        value: 'headache',
+                        synonyms: [
+                            'headaches',
+                            'sore head',
+                            'lots of headaches',
+                            'bad headaches',
+                            'really bad headaches',
+                        ],
+                    },
                 },
-            },
-            {
-                id: 'cough',
-                name: {
-                    value: 'cough',
-                    synonyms: ['coughing', 'constant coughing', 'cough a lot', 'moderate cough'],
+                {
+                    id: 'cough',
+                    name: {
+                        value: 'cough',
+                        synonyms: ['coughing', 'constant coughing', 'cough a lot', 'moderate cough'],
+                    },
                 },
-            },
-        );
+                {
+                    id: 'healthQuestionnaire',
+                    name: {
+                        value: 'healthQuestionnaire',
+                        synonyms: [
+                            'the health questionnaire',
+                            'health questions',
+                            'symptoms',
+                            'symptom questions',
+                        ],
+                    },
+                },
+            ],
+        })
+        .buildCoreModelForControls(new MultipleLists.DemoControlManager());
 }
 
 // If launched directly, build and write to a file
@@ -179,4 +193,3 @@ if (require.main === module) {
     TwoListsIM.imGen.buildAndWrite('en-US-generated.json');
     console.log('Wrote ./en-US-generated.json');
 }
-[].push();

@@ -28,8 +28,6 @@ import { jsonProvider } from './interactionModelForTest';
 import InteractionModelData = v1.skill.interactionModel.InteractionModelData;
 
 class SingleValueTestControl extends Control implements InteractionModelContributor {
-    // dummy canHandle, handle, canTakeInitiative and takeInitiative cause
-    // the ControlInteractionModelGenerator only cares about updateInteractionModel and getTargetIds
     canHandle(): boolean {
         return true;
     }
@@ -41,10 +39,6 @@ class SingleValueTestControl extends Control implements InteractionModelContribu
 
     updateInteractionModel(generator: ControlInteractionModelGenerator, imData: ModelData) {
         generator.addControlIntent(new SingleValueControlIntent('TEST'), imData);
-    }
-
-    getTargetIds(): string[] {
-        return ['test'];
     }
 }
 class SimpleTestControl extends Control implements InteractionModelContributor {
@@ -58,10 +52,6 @@ class SimpleTestControl extends Control implements InteractionModelContributor {
     takeInitiative(): void {}
     updateInteractionModel(generator: ControlInteractionModelGenerator, imData: ModelData) {
         generator.addControlIntent(new GeneralControlIntent(), imData);
-    }
-
-    getTargetIds(): string[] {
-        return ['test'];
     }
 }
 class TestControlManager extends ControlManager {
@@ -151,9 +141,10 @@ suite('ControlInteractionModel Generator tests', () => {
             );
 
             // Test that french is popping out.
-            expect(interactionModel.interactionModel?.languageModel?.types![4].values![0].name?.value).equals(
-                'la',
+            const targetType = interactionModel!.interactionModel!.languageModel!.types!.find(
+                (x) => x.name === 'target',
             );
+            expect(targetType!.values![0].name?.value).equals('la');
         });
 
         test('When provided override is is not complete, should use the default resource', () => {
@@ -190,9 +181,6 @@ suite('ControlInteractionModel Generator tests', () => {
                         samples: ['hello world'],
                     });
                 }
-                getTargetIds() {
-                    return [];
-                }
             }
             class SimpleControlManager extends ControlManager {
                 createControlTree() {
@@ -204,36 +192,7 @@ suite('ControlInteractionModel Generator tests', () => {
                 .withInvocationName(TEST_INVOCATION_NAME)
                 .build();
 
-            expect(interactionModel).deep.equal({
-                interactionModel: {
-                    languageModel: {
-                        modelConfiguration: undefined,
-                        intents: [
-                            {
-                                name: 'testIntent',
-                                samples: ['hello world'],
-                            },
-                        ],
-                        invocationName: TEST_INVOCATION_NAME,
-                        types: [],
-                    },
-                    prompts: [],
-                },
-            });
-        });
-    });
-
-    suite('build tests', () => {
-        test('build should throw warning message if targetSlotIds are missing', () => {
-            const spy = sinon.stub(Logger.prototype, 'warn');
-            const interactionModel = new ControlInteractionModelGenerator()
-                .buildCoreModelForControls(new TestControlManager())
-                .withInvocationName(TEST_INVOCATION_NAME)
-                .build();
-
-            expect(spy.calledOnceWith('target slot with id test is not present in InteractionModel.')).eq(
-                true,
-            );
+            expect(interactionModel.interactionModel?.languageModel?.intents![0].name === 'testIntent');
         });
     });
 });

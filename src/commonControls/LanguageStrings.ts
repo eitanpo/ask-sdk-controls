@@ -45,14 +45,6 @@ export const defaultI18nResources: Resource = {
             DATE_CONTROL_DEFAULT_REPROMPT_CONFIRM_VALUE: 'Was that {{value}}?',
             DATE_CONTROL_DEFAULT_REPROMPT_VALUE_AFFIRMED: 'Great.',
             DATE_CONTROL_DEFAULT_REPROMPT_VALUE_DISAFFIRMED: 'My mistake.',
-            // DateControl BuildTime
-            DATE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_DATE: {
-                id: $.Target.Date,
-                name: {
-                    value: 'date',
-                    synonyms: ['date', 'the date', 'day', 'the day'],
-                },
-            },
 
             // NumberControl Runtime
             NUMBER_CONTROL_DEFAULT_PROMPT_VALUE_SET: 'Ok. Value set to {{value}}.',
@@ -87,15 +79,6 @@ export const defaultI18nResources: Resource = {
                 'Sorry you disagreed but with the same number.',
             NUMBER_CONTROL_DEFAULT_REPROMPT_INFORM_CONFUSING_CONFIRMATION:
                 'Sorry the previous value is {{previousValue}}, but you confirmed to a different number.',
-
-            // NumberControl BuildTime
-            NUMBER_CONTROL_DEFAULT_SLOT_VALUES_TARGET_NUMBER: {
-                id: $.Target.Number,
-                name: {
-                    value: 'number',
-                    synonyms: ['the number'],
-                },
-            },
 
             // ValueControl Runtime
             VALUE_CONTROL_DEFAULT_PROMPT_VALUE_SET: 'OK, {{value}}.',
@@ -147,21 +130,6 @@ export const defaultI18nResources: Resource = {
             LIST_CONTROL_DEFAULT_REPROMPT_VALUE_AFFIRMED: 'Great.',
             LIST_CONTROL_DEFAULT_REPROMPT_VALUE_DISAFFIRMED: 'My mistake.',
             LIST_CONTROL_DEFAULT_APL_HEADER_TITLE: 'Please select...',
-            // ListControl BuildTime
-            LIST_CONTROL_DEFAULT_SLOT_VALUES_TARGET_CHOICE: {
-                id: $.Target.Choice,
-                name: {
-                    value: 'choice',
-                    synonyms: ['my choice', 'selection', 'my selection'],
-                },
-            },
-            LIST_CONTROL_DEFAULT_SLOT_VALUES_ACTION_SELECT: {
-                id: $.Action.Select,
-                name: {
-                    value: 'select',
-                    synonyms: ['select', 'choose', 'take', 'pick', 'want', 'need'],
-                },
-            },
 
             // Questionnaire Control Runtime
             QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_VALUE_SET: 'OK, {{value}}.',
@@ -194,21 +162,6 @@ export const defaultI18nResources: Resource = {
             QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_VALUE_AFFIRMED: 'Great.',
             QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_VALUE_DISAFFIRMED: 'My mistake.',
             QUESTIONNAIRE_CONTROL_DEFAULT_APL_HEADER_TITLE: 'Please select...',
-            // ListControl BuildTime
-            QUESTIONNAIRE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_CHOICE: {
-                id: $.Target.Choice,
-                name: {
-                    value: 'choice',
-                    synonyms: ['my choice', 'selection', 'my selection'],
-                },
-            },
-            QUESTIONNAIRE_CONTROL_DEFAULT_SLOT_VALUES_ACTION_SELECT: {
-                id: $.Action.Select,
-                name: {
-                    value: 'select',
-                    synonyms: ['select', 'choose', 'take', 'pick'],
-                },
-            },
 
             // DateRangeControl Runtime
             DATE_RANGE_CONTROL_DEFAULT_PROMPT_START_DATE_SET: 'Got it. The start date is {{value}}.',
@@ -287,42 +240,6 @@ export const defaultI18nResources: Resource = {
             DATE_RANGE_CONTROL_DEFAULT_REPROMPT_CONFIRM_VALUE: 'Was that {{value}}?',
 
             DATE_RANGE_CONTROL_DEFAULT_STATE_VALUE_FOR_START_AND_END: '{{start}} to {{end}}',
-            // DateRangeControl BuildTime
-            DATE_RANGE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_START_DATE: {
-                id: $.Target.StartDate,
-                name: {
-                    value: 'startDate',
-                    synonyms: [
-                        'start date',
-                        'the start date',
-                        'starting date',
-                        'the starting date',
-                        'start', // TODO: consider hoisting to a target called "start".
-                        'the start',
-                    ],
-                },
-            },
-            DATE_RANGE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_END_DATE: {
-                id: $.Target.EndDate,
-                name: {
-                    value: 'endDate',
-                    synonyms: [
-                        'end date',
-                        'the end date',
-                        'ending date',
-                        'the ending date',
-                        'end', // TODO: consider hoisting to a target called "end".
-                        'the end',
-                    ],
-                },
-            },
-            DATE_RANGE_CONTROL_DEFAULT_SLOT_VALUES_TARGET_DATE_RANGE: {
-                id: $.Target.DateRange,
-                name: {
-                    value: 'dateRange',
-                    synonyms: ['date range', 'the date range', 'dates', 'the dates'],
-                },
-            },
 
             // ControlIntent Samples
 
@@ -949,6 +866,44 @@ export const defaultI18nResources: Resource = {
                             ],
                         },
                     },
+                    {
+                        id: $.Action.GoBack,
+                        name: {
+                            value: 'goBack',
+                            synonyms: [
+                                'back',
+                                'go back',
+                                'go back to previous',
+                                'go back to the last',
+                                'go back to last',
+                                'return',
+                                'go backward',
+                                'back to previous',
+                                'back to last',
+                            ],
+                        },
+                    },
+                    {
+                        id: $.Action.Start,
+                        name: {
+                            value: 'start',
+                            synonyms: ['commence', 'begin'],
+                        },
+                    },
+                    {
+                        id: $.Action.Restart,
+                        name: {
+                            value: 'restart',
+                            synonyms: ['recommence', 'start over'],
+                        },
+                    },
+                    {
+                        id: $.Action.Resume,
+                        name: {
+                            value: 'resume',
+                            synonyms: ['continue'],
+                        },
+                    },
                 ],
             },
 
@@ -973,6 +928,82 @@ export const defaultI18nResources: Resource = {
                                 'most of them',
                                 'almost all',
                                 'almost all of them',
+                            ],
+                        },
+                    },
+                    {
+                        id: $.Target.Choice,
+                        name: {
+                            value: 'choice',
+                            synonyms: ['my choice', 'selection', 'my selection'],
+                        },
+                    },
+                    {
+                        id: $.Target.Date,
+                        name: {
+                            value: 'date',
+                            synonyms: ['date', 'the date', 'day', 'the day'],
+                        },
+                    },
+                    {
+                        id: $.Target.Number,
+                        name: {
+                            value: 'number',
+                            synonyms: ['the number'],
+                        },
+                    },
+                    {
+                        id: $.Target.Choice,
+                        name: {
+                            value: 'choice',
+                            synonyms: ['my choice', 'selection', 'my selection'],
+                        },
+                    },
+                    {
+                        id: $.Target.Start,
+                        name: {
+                            value: 'start',
+                            synonyms: ['the start'],
+                        },
+                    },
+                    {
+                        id: $.Target.End,
+                        name: {
+                            value: 'end',
+                            synonyms: ['the end'],
+                        },
+                    },
+                    {
+                        id: $.Target.StartDate,
+                        name: {
+                            value: 'startDate',
+                            synonyms: ['start date', 'the start date', 'starting date', 'the starting date'],
+                        },
+                    },
+                    {
+                        id: $.Target.EndDate,
+                        name: {
+                            value: 'endDate',
+                            synonyms: ['end date', 'the end date', 'ending date', 'the ending date'],
+                        },
+                    },
+                    {
+                        id: $.Target.DateRange,
+                        name: {
+                            value: 'dateRange',
+                            synonyms: ['date range', 'the date range', 'dates', 'the dates'],
+                        },
+                    },
+                    {
+                        id: $.Target.Questionnaire,
+                        name: {
+                            value: 'questionnaire',
+                            synonyms: [
+                                'questionnaire',
+                                'the questionnaire',
+                                'the questions',
+                                'survey',
+                                'the survey',
                             ],
                         },
                     },

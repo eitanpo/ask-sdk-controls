@@ -530,17 +530,10 @@ export class NumberControl extends Control implements InteractionModelContributo
         generator.addControlIntent(new SingleValueControlIntent(AmazonBuiltInSlotType.NUMBER), imData);
         generator.addYesAndNoIntents();
 
-        if (this.props.interactionModel.targets.includes($.Target.Number)) {
-            generator.addValuesToSlotType(
-                SharedSlotType.TARGET,
-                i18next.t('NUMBER_CONTROL_DEFAULT_SLOT_VALUES_TARGET_NUMBER', { returnObjects: true }),
-            );
+        for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
+            generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
-    }
-
-    // tsDoc - see InteractionModelContributor
-    getTargetIds(): string[] {
-        return this.props.interactionModel.targets;
+        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);        
     }
 
     /**

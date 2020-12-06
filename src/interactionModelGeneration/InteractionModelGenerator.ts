@@ -43,7 +43,7 @@ export class InteractionModelGenerator {
     protected prompts: Prompt[] = [];
     protected invocationName: string;
 
-    setModelConfiguration(modelConfiguration: ModelConfiguration): InteractionModelGenerator {
+    setModelConfiguration(modelConfiguration: ModelConfiguration): this {
         this.modelConfiguration = modelConfiguration;
         return this;
     }
@@ -53,7 +53,7 @@ export class InteractionModelGenerator {
      *
      * @param intent - Intent
      */
-    addIntent(intent: Intent): InteractionModelGenerator {
+    addIntent(intent: Intent): this {
         // First Check whether the new intent has the same name as any existing intents
         // If intent has the same name already exist in the array,
         // then check whether these two intents are deeply equal to each other
@@ -307,6 +307,22 @@ export class InteractionModelGenerator {
             fs.writeFileSync(path, interactionModelJson);
             log.info(`Wrote interactionModel: ${path}`);
         }
+    }
+
+    isSlotDefined(slotTypeId: string) {
+        const slotType = this.slotTypes.find((x) => x.name === slotTypeId);
+        return slotType !== undefined;
+    }
+
+    isSlotValueIsDefined(slotTypeId: string, slotValueId: string) {
+        const slotType = this.slotTypes.find((x) => x.name === slotTypeId);
+        if (slotType === undefined) {
+            return false;
+        }
+        if (slotType.values === undefined) {
+            return false;
+        }
+        return slotType.values.find((x) => x.id === slotValueId);
     }
 }
 

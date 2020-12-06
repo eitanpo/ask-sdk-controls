@@ -332,12 +332,6 @@ function updateIMForControlTree(
 ): void {
     if (control instanceof Control && implementsInteractionModelContributor(control)) {
         control.updateInteractionModel(generator, imData);
-        const targetIds: string[] | undefined = control.getTargetIds();
-        if (targetIds !== undefined) {
-            targetIds.forEach((targetId) => {
-                generator.targetSlotIds = generator.targetSlotIds.add(targetId);
-            });
-        }
     }
 
     // If container control, do same thing recursively
