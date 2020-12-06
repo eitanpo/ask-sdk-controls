@@ -257,7 +257,7 @@ export function getMVSSlotResolutions(
  *
  * Purpose:
  *  - this is intended to be used with the ListControl prop: nlu.slotValueConflictExtensions.intentToValueMapper
- *  
+ *
  * Behavior:
  * The name is processed with the following rules:
  * - the longest prefix ending in a period is removed.
@@ -271,7 +271,7 @@ export function getMVSSlotResolutions(
  *   AMAZON.YesIntent -> 'yes'
  *   AMAZON.ShuffleOffIntent -> 'shuffleOFf'
  * ```
- * 
+ *
  */
 export function defaultIntentToValueMapper(intent: Intent): string {
     let result = intent.name;

@@ -103,7 +103,7 @@ export interface QuestionAnsweredActPayload {
 
 export interface AnswerClearedActPayload {
     questionId: string;
-    
+
     /**
      * if true, the user gave the answer out-of-order by mentioning a specific question.
      * if false, the user directly answered the asked question
@@ -116,7 +116,7 @@ export interface AnswerClearedActPayload {
      *  - whereas if false, prompt= "OK."
      */
     userMentionedQuestion: boolean;
-    renderedQuestionShortForm: string;    
+    renderedQuestionShortForm: string;
 }
 
 /**

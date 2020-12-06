@@ -57,7 +57,7 @@ export interface Question {
      *
      * When rendering ValueSetAct, the short form of the question is used
      *  construct a prompt like "OK, yes for cats."
-     * 
+     *
      * Example:
      * ```
      *  questionPrompt: "Do you like cats?"

@@ -156,7 +156,7 @@ suite('ListControl e2e tests', () => {
                 interactionModel: {
                     slotValueConflictExtensions: {
                         filteredSlotType: 'Maybe',
-                        intentToValueMapper: (intent) => defaultIntentToValueMapper(intent),  //TODO: make this the default on ListControl.
+                        intentToValueMapper: (intent) => defaultIntentToValueMapper(intent), //TODO: make this the default on ListControl.
                     },
                 },
                 prompts: {

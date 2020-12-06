@@ -263,7 +263,6 @@ export class TestInput {
     }
 
     public static simpleUserEvent(args: any[], token = 'token', locale = 'en-US'): ControlInput {
-        
         const userEvent: UserEvent = {
             type: 'Alexa.Presentation.APL.UserEvent',
             requestId: makeRequestId(),
@@ -277,8 +276,8 @@ export class TestInput {
                 id: 'HouseTextButton',
             },
             token: token,
-        }
-        
+        };
+
         return dummyControlInput(userEvent);
     }
 }

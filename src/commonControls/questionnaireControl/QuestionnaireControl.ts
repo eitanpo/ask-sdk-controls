@@ -1500,16 +1500,16 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             );
         }
         generator.addYesAndNoIntents();
-        
+
         generator.ensureSlotIsDefined(this.id, this.props.interactionModel.slotType);
         generator.ensureSlotIsNoneOrDefined(this.id, this.props.interactionModel.filteredSlotType);
 
         for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
             generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
-        
+
         generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);
-        
+
         generator.ensureSlotValueIDsAreDefined(
             this.id,
             'target',

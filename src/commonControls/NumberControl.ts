@@ -533,7 +533,7 @@ export class NumberControl extends Control implements InteractionModelContributo
         for (const [capability, actionSlotIds] of Object.entries(this.props.interactionModel.actions)) {
             generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
-        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);        
+        generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);
     }
 
     /**

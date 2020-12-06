@@ -137,7 +137,6 @@ export namespace InputUtil {
         return feedback === $.Feedback.Disaffirm;
     }
 
-
     /**
      * Test if the feedback is defined
      * @param feedback - Feedback slot value ID
@@ -246,8 +245,11 @@ export namespace InputUtil {
      * @param valueType - ValueType slot value ID
      * @param expectedValueType - ValueType slot value ID to match against
      */
-    export function valueTypeMatch(valueType: string | undefined, expectedValueType: string | string[]): boolean {
-        const expectedTypes = Array.isArray(expectedValueType) ? expectedValueType : [expectedValueType]
+    export function valueTypeMatch(
+        valueType: string | undefined,
+        expectedValueType: string | string[],
+    ): boolean {
+        const expectedTypes = Array.isArray(expectedValueType) ? expectedValueType : [expectedValueType];
         return valueType !== undefined && expectedValueType.includes(valueType);
     }
 
@@ -343,5 +345,4 @@ export namespace InputUtil {
         const { valueStr, erMatch } = unpackSingleValueControlIntent((input.request as IntentRequest).intent);
         return { valueStr: valueStr!, erMatch: erMatch! };
     }
-
 }

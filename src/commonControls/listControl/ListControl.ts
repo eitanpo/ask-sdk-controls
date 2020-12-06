@@ -1217,8 +1217,6 @@ export class ListControl extends Control implements InteractionModelContributor 
             generator.ensureSlotValueIDsAreDefined(this.id, 'action', actionSlotIds);
         }
         generator.ensureSlotValueIDsAreDefined(this.id, 'target', this.props.interactionModel.targets);
-
-        
     }
 
     // TODO: feature: consider using slot elicitation when requesting.

@@ -67,7 +67,6 @@ export interface ControlInputHandlingProps {
      * Custom handling functions
      */
     customHandlingFuncs?: ControlInputHandler[];
-
 }
 
 /**

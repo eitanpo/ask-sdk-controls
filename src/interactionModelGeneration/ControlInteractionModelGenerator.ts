@@ -113,7 +113,9 @@ export class ControlInteractionModelGenerator extends InteractionModelGenerator 
 
     ensureSlotIsDefined(controlId: string, slotType: string) {
         if (!this.isSlotDefined(slotType)) {
-            throw new Error(`Control id=${controlId} requires slot type ${slotType} but it does not exist.  If it is a custom slot add it to the interaction model before calling imGen.buildCoreModelForControls()`);
+            throw new Error(
+                `Control id=${controlId} requires slot type ${slotType} but it does not exist.  If it is a custom slot add it to the interaction model before calling imGen.buildCoreModelForControls()`,
+            );
         }
     }
 
