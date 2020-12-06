@@ -320,7 +320,7 @@ export interface QuestionnaireControlInputHandlingProps extends ControlInputHand
      * Function that maps an intent to a choice ID defined in for props.slotValue.
      *
      * Default: `IntentUtils.defaultIntentToValueMapper` which converts "AMAZON.YesIntent"
-     * -> 'yes' and so on.  Generally,  "(.+)*<Value>Intent" -> 'value'.
+     * to 'yes' and so on.  Generally,  `(.+)*<Value>Intent" -> 'value'`.
      *
      * Purpose:
      * * Some simple utterances intended for this control will be interpreted as intents

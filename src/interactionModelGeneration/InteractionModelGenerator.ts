@@ -322,7 +322,7 @@ export class InteractionModelGenerator {
         if (slotType.values === undefined) {
             return false;
         }
-        return slotType.values.find((x) => x.id === slotValueId);
+        return slotType.values.find((x) => x.id === slotValueId) !== undefined;
     }
 }
 

@@ -37,9 +37,12 @@ export interface Question {
      * ```
      *
      * Regardless of what the active question is, a user input of 'I like cats' will be
-     * parsed by NLU as a `ControlIntent` with slot values `value = like` and `target =
-     * cats`. This intent will be interpreted by the Questionnaire Control as an answer.
-     *
+     * parsed by NLU as a `ControlIntent` with slot values
+     * ```
+     * value: 'like'
+     * target: 'cats'
+     * ```
+     * which will be interpreted by the Questionnaire Control as an answer.
      */
     targets: string[];
 

@@ -21,8 +21,10 @@ import {
 } from 'ask-sdk-core';
 import { Intent, IntentRequest, interfaces, LaunchRequest, Request, RequestEnvelope } from 'ask-sdk-model';
 import { expect } from 'chai';
-import _, { invoke } from 'lodash';
+import _ from 'lodash';
+import { Control } from '../../controls/Control';
 import { ControlInput } from '../../controls/ControlInput';
+import { ControlResultBuilder } from '../../controls/ControlResult';
 import { IControl } from '../../controls/interfaces/IControl';
 import { IControlInput } from '../../controls/interfaces/IControlInput';
 import { IControlResult } from '../../controls/interfaces/IControlResult';
@@ -32,8 +34,6 @@ import { IntentBuilder } from '../IntentUtils';
 import { SkillInvoker, TestResponseObject } from './SkillInvoker';
 import { wrapRequestHandlerAsSkill } from './SkillWrapper';
 import UserEvent = interfaces.alexa.presentation.apl.UserEvent;
-import { Control } from '../../controls/Control';
-import { ControlResultBuilder } from '../../controls/ControlResult';
 
 const log = new Logger('AskSdkControls:TestingUtils');
 
@@ -267,7 +267,7 @@ export class TestInput {
             type: 'Alexa.Presentation.APL.UserEvent',
             requestId: makeRequestId(),
             timestamp: '2019-10-04T18:48:22Z',
-            locale: locale,
+            locale,
             arguments: args,
             components: {},
             source: {
@@ -275,7 +275,7 @@ export class TestInput {
                 handler: 'Press',
                 id: 'HouseTextButton',
             },
-            token: token,
+            token,
         };
 
         return dummyControlInput(userEvent);
