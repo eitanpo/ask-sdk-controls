@@ -61,8 +61,12 @@ export class AskIfCompleteAct extends InitiativeAct {
 
 /**
  * Suggest the user continue making updates then mark questionnaire as complete.
+ *
+ * Purpose:
+ * - the follow up version of AskIfCompleted.
+ * - used if the user disconfirms the first AskIfCompleted question.
  */
-export class SuggestContinueAct extends InitiativeAct {
+export class AskIfCompleteTerseAct extends InitiativeAct {
     render(input: ControlInput, responseBuilder: ControlResponseBuilder): void {
         throw new Error('this.render() is not implemented. Perform rendering in Control.render()');
     }

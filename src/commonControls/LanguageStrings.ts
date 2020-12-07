@@ -241,6 +241,33 @@ export const defaultI18nResources: Resource = {
 
             DATE_RANGE_CONTROL_DEFAULT_STATE_VALUE_FOR_START_AND_END: '{{start}} to {{end}}',
 
+            // QuestionnaireControl
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_QUESTION_ANSWERED_LOW_RISK_OF_MISUNDERSTANDING: '',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_CHOICE:
+                'OK, {{choice}}.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_QUESTION_AND_CHOICE:
+                'OK, {{choice}} for {{question}}.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_COMPLETED: 'Great, thank you.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_COMPLETION_REJECTED:
+                'Sorry, {{renderedReason}} is not a valid choice.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_ACKNOWLEDGE_NOT_COMPLETE:
+                'No problem. Just let me know when you are done.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_ASK_IF_COMPLETE: 'Are you happy with all answers?',
+            QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_ASK_IF_COMPLETE_TERSE: '',
+
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_QUESTION_ANSWERED_LOW_RISK_OF_MISUNDERSTANDING: '',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_CHOICE:
+                'OK, {{choice}}.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_QUESTION_AND_CHOICE:
+                'OK, {{choice}} for {{question}}.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_COMPLETED: 'Great, thank you.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_COMPLETION_REJECTED:
+                'Sorry, {{renderedReason}} is not a valid choice.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_ACKNOWLEDGE_NOT_COMPLETE:
+                'No problem. Just let me know when you are done.',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_ASK_IF_COMPLETE: 'Are you happy with all answers?',
+            QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_ASK_IF_COMPLETE_TERSE: '',
+
             // ControlIntent Samples
 
             /*

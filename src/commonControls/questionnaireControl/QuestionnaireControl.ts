@@ -13,6 +13,7 @@
 
 import { getSupportedInterfaces } from 'ask-sdk-core';
 import { Intent, IntentRequest, interfaces } from 'ask-sdk-model';
+import i18next from 'i18next';
 import _ from 'lodash';
 import { Strings as $ } from '../../constants/Strings';
 import {
@@ -49,11 +50,11 @@ import { Question, QuestionnaireContent } from './QuestionnaireControlStructs';
 import {
     AcknowledgeNotCompleteAct,
     AskIfCompleteAct,
+    AskIfCompleteTerseAct,
     AskQuestionAct,
     CompletedAct,
     QuestionAnsweredAct,
     QuestionnaireCompletionRejectedAct,
-    SuggestContinueAct,
 } from './QuestionnaireControlSystemActs';
 
 // TODO: robust spec & solution for 'invalid' answers
@@ -379,9 +380,9 @@ export class QuestionnaireControlPromptProps {
         | StringOrList
         | ((this: QuestionnaireControl, act: AskIfCompleteAct, input: ControlInput) => StringOrList);
 
-    suggestContinue?:
+    askIfCompleteTerse?:
         | StringOrList
-        | ((this: QuestionnaireControl, act: SuggestContinueAct, input: ControlInput) => StringOrList);
+        | ((this: QuestionnaireControl, act: AskIfCompleteTerseAct, input: ControlInput) => StringOrList);
 
     // valueSet?: StringOrList | ((act: ValueSetAct<any>, input: ControlInput) => StringOrList);
     // valueChanged?: StringOrList | ((act: ValueChangedAct<any>, input: ControlInput) => StringOrList);
@@ -461,17 +462,17 @@ export class QuestionnaireControlState implements ControlState {
     /**
      * Whether the user has explicitly completed the questionnaire.
      */
-    isExplicitlyCompleted: boolean;
+    userExplicitlyCompleted: boolean;
 
     /**
-     * Whether we should quietly wait for the user to complete the questionnaire.
+     * Whether the user has been ask if they are done and replied 'no'.
      */
-    requireExplicitCompletion: boolean;
+    userDisconfirmedCompletion: boolean;
 
     /**
      * Did the user activate the control. If yes, treat it like required=true.
      */
-    explicitlyActivated: boolean;
+    userExplicitlyActivated: boolean;
 }
 
 /**
@@ -539,7 +540,6 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             // questionRenderer: (id: string) => id,
             // choiceRenderer: (id: string) => id,
             prompts: {
-                //TODO: i18n the defaults.
                 askQuestionAct: (act: AskQuestionAct, input: ControlInput) =>
                     act.control.evaluatePromptProp(
                         act,
@@ -549,54 +549,40 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
                 questionAnsweredAct: (act: QuestionAnsweredAct, input: ControlInput) => {
                     if (!act.payload.userAnsweredWithExplicitValue && !act.payload.userMentionedQuestion) {
-                        return '';
+                        return i18next.t(
+                            'QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_QUESTION_ANSWERED_LOW_RISK_OF_MISUNDERSTANDING',
+                        );
                     } else if (
                         act.payload.userAnsweredWithExplicitValue &&
                         !act.payload.userMentionedQuestion
                     ) {
-                        return `OK, ${act.payload.renderedChoice}.`;
+                        return i18next.t(
+                            'QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_CHOICE',
+                            { choice: act.payload.renderedChoice },
+                        );
                     } else {
-                        return `OK, ${act.payload.renderedChoice} for ${act.payload.renderedQuestionShortForm}.`;
+                        return i18next.t(
+                            'QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_QUESTION_AND_CHOICE',
+                            {
+                                choice: act.payload.renderedChoice,
+                                question: act.payload.renderedQuestionShortForm,
+                            },
+                        );
                     }
                 },
-
-                questionnaireCompleted: 'Great, thank you.',
-
+                questionnaireCompleted: i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_COMPLETED'),
                 questionnaireCompletionRejected: (
                     act: QuestionnaireCompletionRejectedAct,
                     input: ControlInput,
-                ) => `Sorry, ${act.payload.renderedReason} is not a valid choice.`,
-
-                acknowledgeNotCompleteAct: 'No problem. Just let me know when you are done.',
-                askIfComplete: 'Are you happy with all answers?',
-                suggestContinue: '',
-
-                // confirmValue: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_PROMPT_CONFIRM_VALUE', { value: act.payload.value }),
-                // valueConfirmed: i18next.t('LIST_CONTROL_DEFAULT_PROMPT_VALUE_AFFIRMED'),
-                // valueDisconfirmed: i18next.t('LIST_CONTROL_DEFAULT_PROMPT_VALUE_DISAFFIRMED'),
-                // valueSet: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_PROMPT_VALUE_SET', { value: act.payload.value }),
-                // valueChanged: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_PROMPT_VALUE_CHANGED', { value: act.payload.value }),
-                // invalidValue: (act) => {
-                //     if (act.payload.renderedReason !== undefined) {
-                //         return i18next.t('LIST_CONTROL_DEFAULT_PROMPT_INVALID_VALUE_WITH_REASON', {
-                //             value: act.payload.value,
-                //             reason: act.payload.renderedReason,
-                //         });
-                //     }
-                //     return i18next.t('LIST_CONTROL_DEFAULT_PROMPT_GENERAL_INVALID_VALUE');
-                // },
-                // unusableInputValue: (act) => i18next.t('LIST_CONTROL_DEFAULT_PROMPT_UNUSABLE_INPUT_VALUE'),
-                // requestValue: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_PROMPT_REQUEST_VALUE', {
-                //         suggestions: ListFormatting.format(act.payload.choicesFromActivePage),
-                //     }),
-                // requestChangedValue: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_PROMPT_REQUEST_CHANGED_VALUE', {
-                //         suggestions: ListFormatting.format(act.payload.choicesFromActivePage),
-                //     }),
+                ) =>
+                    i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_COMPLETION_REJECTED', {
+                        reason: act.payload.renderedReason,
+                    }),
+                acknowledgeNotCompleteAct: i18next.t(
+                    'QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_ACKNOWLEDGE_NOT_COMPLETE',
+                ),
+                askIfComplete: i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_ASK_IF_COMPLETE'),
+                askIfCompleteTerse: i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_PROMPT_ASK_IF_COMPLETE_TERSE'),
             },
             reprompts: {
                 askQuestionAct: (act: AskQuestionAct, input: ControlInput) =>
@@ -608,55 +594,40 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
                 questionAnsweredAct: (act: QuestionAnsweredAct, input: ControlInput) => {
                     if (!act.payload.userAnsweredWithExplicitValue && !act.payload.userMentionedQuestion) {
-                        return '';
+                        return i18next.t(
+                            'QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_QUESTION_ANSWERED_LOW_RISK_OF_MISUNDERSTANDING',
+                        );
                     } else if (
                         act.payload.userAnsweredWithExplicitValue &&
                         !act.payload.userMentionedQuestion
                     ) {
-                        return `OK, ${act.payload.renderedChoice}`;
+                        return i18next.t(
+                            'QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_CHOICE',
+                            { choice: act.payload.renderedChoice },
+                        );
                     } else {
-                        return `OK, ${act.payload.renderedChoice} for ${act.payload.renderedQuestionShortForm}`;
+                        return i18next.t(
+                            'QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_QUESTION_ANSWERED_RISK_OF_MISUNDERSTANDING_QUESTION_AND_CHOICE',
+                            {
+                                choice: act.payload.renderedChoice,
+                                question: act.payload.renderedQuestionShortForm,
+                            },
+                        );
                     }
                 },
-
-                questionnaireCompleted: '',
-
+                questionnaireCompleted: i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_COMPLETED'),
                 questionnaireCompletionRejected: (
                     act: QuestionnaireCompletionRejectedAct,
                     input: ControlInput,
-                ) => `Sorry, ${act.payload.renderedReason} is not a valid choice.`,
-
-                acknowledgeNotCompleteAct: 'Please let me know when you are done.',
-
-                askIfComplete: 'Are you happy with all answers?',
-                suggestContinue: '',
-
-                // confirmValue: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_CONFIRM_VALUE', { value: act.payload.value }),
-                // valueConfirmed: i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_VALUE_AFFIRMED'),
-                // valueDisconfirmed: i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_VALUE_DISAFFIRMED'),
-                // valueSet: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_VALUE_SET', { value: act.payload.value }),
-                // valueChanged: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_VALUE_CHANGED', { value: act.payload.value }),
-                // invalidValue: (act) => {
-                //     if (act.payload.renderedReason !== undefined) {
-                //         return i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_INVALID_VALUE_WITH_REASON', {
-                //             value: act.payload.value,
-                //             reason: act.payload.renderedReason,
-                //         });
-                //     }
-                //     return i18next.t('LIST_CONTROL_DEFAULT_PROMPT_GENERAL_INVALID_VALUE');
-                // },
-                // unusableInputValue: (act) => i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_UNUSABLE_INPUT_VALUE'),
-                // requestValue: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_REQUEST_VALUE', {
-                //         suggestions: ListFormatting.format(act.payload.choicesFromActivePage),
-                //     }),
-                // requestChangedValue: (act) =>
-                //     i18next.t('LIST_CONTROL_DEFAULT_REPROMPT_REQUEST_CHANGED_VALUE', {
-                //         suggestions: ListFormatting.format(act.payload.choicesFromActivePage),
-                //     }),
+                ) =>
+                    i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_COMPLETION_REJECTED', {
+                        reason: act.payload.renderedReason,
+                    }),
+                acknowledgeNotCompleteAct: i18next.t(
+                    'QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_ACKNOWLEDGE_NOT_COMPLETE',
+                ),
+                askIfComplete: i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_ASK_IF_COMPLETE'),
+                askIfCompleteTerse: i18next.t('QUESTIONNAIRE_CONTROL_DEFAULT_REPROMPT_ASK_IF_COMPLETE_TERSE'),
             },
             apl: QuestionnaireControlAPLPropsBuiltIns.Default,
             inputHandling: {
@@ -1216,7 +1187,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         resultBuilder.addAct(new AcknowledgeNotCompleteAct(this));
 
         this.clearCompletionFlag(); // user interacted with the and so the questionnaire should stick around
-        this.state.requireExplicitCompletion = true; // we don't want to keep pestering the user so suppress completion questions.
+        this.state.userDisconfirmedCompletion = true; // so that we avoid pestering the user.
         return;
     }
 
@@ -1321,11 +1292,9 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
 
     private askIfComplete(input: ControlInput, resultBuilder: ControlResultBuilder): void {
         const content = this.getQuestionnaireContent(input);
-        // const renderedContent = this.getRenderedQuestionnaireContent(input);
-
         let initiativeAct;
-        if (this.state.requireExplicitCompletion) {
-            initiativeAct = new SuggestContinueAct(this);
+        if (this.state.userDisconfirmedCompletion) {
+            initiativeAct = new AskIfCompleteTerseAct(this);
         } else {
             initiativeAct = new AskIfCompleteAct(this);
         }
@@ -1385,12 +1354,12 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
                 this.evaluatePromptProp(act, this.props.reprompts.askIfComplete, input),
             );
             this.addStandardAPL(input, builder);
-        } else if (act instanceof SuggestContinueAct) {
+        } else if (act instanceof AskIfCompleteTerseAct) {
             builder.addPromptFragment(
-                this.evaluatePromptProp(act, this.props.prompts.suggestContinue, input),
+                this.evaluatePromptProp(act, this.props.prompts.askIfCompleteTerse, input),
             );
             builder.addRepromptFragment(
-                this.evaluatePromptProp(act, this.props.reprompts.suggestContinue, input),
+                this.evaluatePromptProp(act, this.props.reprompts.askIfCompleteTerse, input),
             );
             this.addStandardAPL(input, builder);
         }
@@ -1576,12 +1545,12 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         // if we haven't started and required=false, then don't start.
         if (
             this.state.value === {} &&
-            !this.state.explicitlyActivated &&
+            !this.state.userExplicitlyActivated &&
             this.evaluateBooleanProp(this.props.required, input) === false
         ) {
             return false;
         }
-        if (this.state.isExplicitlyCompleted) {
+        if (this.state.userExplicitlyCompleted) {
             return false;
         }
         return true;
@@ -1594,19 +1563,19 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     // TODO: can probably refactor these back to inline.
     // as it is better to make higher-level 'capability functions' the public ones.
     private setExplicitlyActivatedFlag() {
-        this.state.explicitlyActivated = true;
+        this.state.userExplicitlyActivated = true;
     }
 
     private clearExplicitlyActivatedFlag() {
-        this.state.explicitlyActivated = false;
+        this.state.userExplicitlyActivated = false;
     }
 
     private setCompletionFlag() {
-        this.state.isExplicitlyCompleted = true;
+        this.state.userExplicitlyCompleted = true;
     }
 
     private clearCompletionFlag() {
-        this.state.isExplicitlyCompleted = false;
+        this.state.userExplicitlyCompleted = false;
     }
 
     private getSlotTypes(): string[] {

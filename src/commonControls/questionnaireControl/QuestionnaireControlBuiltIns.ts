@@ -1,5 +1,3 @@
-import fs from 'fs';
-import { join } from 'path';
 import { ControlInput } from '../../controls/ControlInput';
 import { DeepRequired } from '../../utils/DeepRequired';
 import { QuestionnaireControl, QuestionnaireControlAPLProps } from './QuestionnaireControl';
@@ -45,27 +43,8 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 document: questionnaireDocumentGenerator(control, input),
                 dataSource: questionnaireDataSourceGenerator(control, input),
             };
-
-            const doc =
-                JSON.stringify(aplContent.document, undefined, 2) +
-                '\n\n----------------\n\n' +
-                JSON.stringify(aplContent.dataSource, undefined, 2);
-
-            const docPath: string = join(process.cwd(), 'apl.json');
-            fs.writeFileSync(docPath, doc);
-            // const dataPath: string = join(process.cwd(), 'aplDataSource.json');
-            // fs.writeFileSync(dataPath, JSON.stringify(aplContent.dataSource, undefined, 2));
-
             return aplContent;
         },
-        // requestValue: {
-        //     document: questionnaireDocumentGenerator(),
-        //     dataSource: questionnaireDataSourceGenerator((choiceId) => choiceId),
-        // },
-        // requestChangedValue: {
-        //     document: questionnaireDocumentGenerator(),
-        //     dataSource: questionnaireDataSourceGenerator((choiceId) => choiceId),
-        // },
     };
 
     /**
@@ -88,30 +67,6 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
             });
         }
 
-        // return {
-        //     general: {
-        //         controlId: 'abc',
-        //         dataVersion: 1,
-        //         radioButtonSize: '85',
-        //         buttonColumnWidth: '124',
-        //         headerTitle: 'Please answer all that you can',
-        //         headerSubtitle: null,
-        //         headerBackButton: false,
-        //         nextButtonText: 'Next >',
-        //     },
-        //     questionData: {
-        //         type: 'dynamicIndexList',
-        //         listId: 'my-list-id',
-        //         startIndex: 0,
-        //         items: [
-        //             { primaryText: 'Question 0', questionId: '0', selectedIndex: -1 },
-        //             { primaryText: 'Question 1', questionId: '1', selectedIndex: -1 },
-        //             { primaryText: 'Question 2', questionId: '2', selectedIndex: -1 },
-        //             { primaryText: 'Question 3', questionId: '3', selectedIndex: -1 },
-        //         ],
-        //     },
-        // };
-
         return {
             wrapper: {
                 general: {
@@ -128,30 +83,6 @@ export namespace QuestionnaireControlAPLPropsBuiltIns {
                 questionData: questionItems,
             },
         };
-
-        // // example:
-        // {
-        //     wrapper: {
-        //         metadata: {
-        //             title: 'What symptoms do you have?',
-        //             focusIndex: 9,
-        //         },
-        //         itemData: [
-        //             {
-        //                 idx: '&#32;&#32;1.',
-        //                 type: 'question',
-        //                 text: 'Shortness of breath',
-        //                 selectedBtnIndex: 0,
-        //             },
-        //             {
-        //                 idx: '&#32;&#32;2.',
-        //                 type: 'question',
-        //                 text: 'Symptom2',
-        //                 selectedBtnIndex: 1,
-        //             }
-        //         ],
-        //     },
-        // };
     }
 
     /**
