@@ -1,4 +1,3 @@
-import { ResponseFactory } from 'ask-sdk-core';
 import { expect } from 'chai';
 /*
  * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
@@ -14,10 +13,7 @@ import { expect } from 'chai';
  */
 import { suite, test } from 'mocha';
 import {
-    ActiveAPLInitiative as ActiveAPLInitiativeAct,
-    ContainerControl,
     ControlHandler,
-    ControlResponseBuilder,
     GeneralControlIntent,
     IntentBuilder,
     SkillInvoker,
@@ -25,7 +21,6 @@ import {
     testTurn,
     waitForDebugger,
 } from '../../../src';
-import { QuestionnaireControl } from '../../../src/commonControls/questionnaireControl/QuestionnaireControl';
 import { MultipleLists } from '../src';
 
 waitForDebugger();
@@ -171,55 +166,4 @@ suite('questionnaire demo skill', () => {
             },
         });
     });
-
-    /**
-     * Ensure that ResponseBuilder.isDisplayUsed is set when ActiveAPLInitiative produced.
-     */
-    test('ActiveAPLInitiative causes response.isDisplayUsed = true', async () => {
-        const controlManager = new MultipleLists.DemoControlManager();
-        const root = controlManager.createControlTree() as ContainerControl;
-        const questionnaireControl = root.children[0] as QuestionnaireControl;
-        const touchInput = TestInput.simpleUserEvent(['healthScreen', 'radioClick', 'cough', 1]);
-        const responseBuilder = new ControlResponseBuilder(ResponseFactory.init());
-        questionnaireControl.renderAct(
-            new ActiveAPLInitiativeAct(questionnaireControl),
-            touchInput,
-            responseBuilder,
-        );
-        expect(responseBuilder.isDisplayUsed()).true; // display marked as used.
-    });
-
-    // TODO.
-    // /**
-    //  * User ignores the prompt and directly answers a question of their choosing, via an
-    //  * alternate value. ie say "I often cough" rather than "yes to cough".
-    //  *
-    //  * Also TODO: allow the value to come via preposition, cf via feedback.
-    //  */
-    // test('answering specific question', async () => {
-    //     const controlManager = new MultipleLists.DemoControlManager();
-    //     const requestHandler = new ControlHandler(controlManager);
-    //     const invoker = new SkillInvoker(requestHandler);
-    //     const response1 = await testTurn(
-    //         invoker,
-    //         'U: __',
-    //         TestInput.launchRequest(),
-    //         'A: Welcome. Do you frequently have a headache?',
-    //     );
-
-    //     await testTurn(
-    //         invoker,
-    //         'U: I cough all the time',
-    //         TestInput.of(
-    //             SingleValueControlIntent.of('FrequencyAnswer', { target: 'cough', FrequencyAnswer: 'often' }),
-    //         ),
-    //         'A: OK, often for cough. Do you frequently have a headache?',
-    //     );
-
-    //     expect(controlManager.questionnaireControl.state.value).deep.equals({
-    //         cough: {
-    //             choiceId: 'often',
-    //         },
-    //     });
-    // });
 });

@@ -66,7 +66,7 @@ export abstract class InitiativeAct extends SystemAct {
  * 3. it is desirable to avoid disrupting the user with voice while they interact with the
  *    screen.
  */
-export class ActiveAPLInitiative extends InitiativeAct {
+export class ActiveAPLInitiativeAct extends InitiativeAct {
     render(input: ControlInput, controlResponseBuilder: ControlResponseBuilder): void {}
 }
 

@@ -11,9 +11,10 @@
  * permissions and limitations under the License.
  */
 
+import { ResponseFactory } from 'ask-sdk-core';
 import { expect } from 'chai';
 import { suite, test } from 'mocha';
-import { GeneralControlIntent } from '../../src';
+import { ActiveAPLInitiativeAct, ControlResponseBuilder, GeneralControlIntent } from '../../src';
 import { QuestionnaireControl } from '../../src/commonControls/questionnaireControl/QuestionnaireControl';
 import { Strings } from '../../src/constants/Strings';
 import { Control } from '../../src/controls/Control';
@@ -25,125 +26,16 @@ import { TestInput, testTurn, waitForDebugger } from '../../src/utils/testSuppor
 
 waitForDebugger();
 
-// suite('ListControl e2e tests', () => {
-//     class ListControlManager extends ControlManager {
-//         createControlTree(): Control {
-//             return new ListControl({
-//                 id: 'apple',
-//                 validation: (state, input) =>
-//                     ['iPhone', 'iPad', 'MacBook'].includes(state.value!)
-//                         ? true
-//                         : { renderedReason: 'Apple Suite category validation failed' },
-//                 listItemIDs: ['iPhone', 'iPad', 'MacBook'],
-//                 slotType: 'AppleSuite',
-//                 confirmationRequired: true,
-//                 prompts: {
-//                     valueSet: '',
-//                 },
-//             });
-//         }
-//     }
 
-//     test('product value valid, needs explicit affirming', async () => {
-//         const requestHandler = new ControlHandler(new ListControlManager());
-//         await testE2E(requestHandler, [
-//             'U: iPhone',
-//             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPhone' })),
-//             'A: Was that iPhone?',
-//             'U: Yeah.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.YesIntent)),
-//             'A: Great.',
-//         ]);
-//     });
-
-//     test('product value after disaffirmation, requires request value act', async () => {
-//         const requestHandler = new ControlHandler(new ListControlManager());
-//         await testE2E(requestHandler, [
-//             'U: iPhone',
-//             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPhone' })),
-//             'A: Was that iPhone?',
-//             'U: No.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.NoIntent)),
-//             'A: My mistake. What is your selection? Some suggestions are iPhone, iPad or MacBook.',
-//         ]);
-//     });
-
-//     test('product value set and changing it requires confirmation and value changed act', async () => {
-//         const requestHandler = new ControlHandler(new ListControlManager());
-//         await testE2E(requestHandler, [
-//             'U: iPhone',
-//             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPhone' })),
-//             'A: Was that iPhone?',
-//             'U: Yes.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.YesIntent)),
-//             'A: Great.',
-//             'U: Change to iPad.',
-//             TestInput.of(
-//                 SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPad', action: $.Action.Change }),
-//             ),
-//             'A: OK, I changed it to iPad. Was that iPad?',
-//             'U: Yes.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.YesIntent)),
-//             'A: Great.',
-//         ]);
-//     });
-
-//     test('product value set and changing it to invalid requires confirmation and checks for validations', async () => {
-//         const requestHandler = new ControlHandler(new ListControlManager());
-//         const invoker = new SkillInvoker(requestHandler);
-//         await testTurn(
-//             invoker,
-//             'U: iPhone',
-//             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPhone' })),
-//             'A: Was that iPhone?',
-//         );
-
-//         await testTurn(
-//             invoker,
-//             'U: Yes.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.YesIntent)),
-//             'A: Great.',
-//         );
-
-//         await testTurn(
-//             invoker,
-//             'U: Change to Airpods.',
-//             TestInput.of(
-//                 SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'Airpods', action: $.Action.Change }),
-//             ),
-//             'A: Sorry, Airpods is not a valid choice because Apple Suite category validation failed. What should I change it to? Some suggestions are iPhone, iPad or MacBook.',
-//         );
-
-//         await testTurn(
-//             invoker,
-//             'U: iPad',
-//             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPad' })),
-//             'A: OK, I changed it to iPad. Was that iPad?',
-//         );
-
-//         await testTurn(
-//             invoker,
-//             'U: No.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.NoIntent)),
-//             'A: My mistake. What is your selection? Some suggestions are iPhone, iPad or MacBook.',
-//         );
-
-//         await testTurn(
-//             invoker,
-//             'U: iPad',
-//             TestInput.of(SingleValueControlIntent.of('AppleSuite', { AppleSuite: 'iPad' })),
-//             'A: OK, I changed it to iPad. Was that iPad?',
-//         );
-
-//         await testTurn(
-//             invoker,
-//             'U: Yes.',
-//             TestInput.of(IntentBuilder.of(AmazonIntent.YesIntent)),
-//             'A: Great.',
-//         );
-//     });
-
-//--
+/*
+  TODO:
+    - answer question with the answer in feedback slot. (FeedbackAnswerToSpecificQuestion)
+    - questionnaire with three choices, perhaps four.
+    - User ignores the prompt and directly answers a question of their choosing, via an
+      alternate value. ie say "I often cough" rather than "yes to cough".
+     - allow the value to come via preposition, cf via feedback.
+   
+ */
 
 suite('QuestionnaireControl e2e tests', () => {
     interface TestProps {
@@ -281,17 +173,16 @@ suite('QuestionnaireControl e2e tests', () => {
     // /**
     //  * Ensure that ResponseBuilder.isDisplayUsed is set when ActiveAPLInitiative produced.
     //  */
-    // test('ActiveAPLInitiative causes response.isDisplayUsed = true', async () => {
-    //     const controlManager = new MultipleLists.DemoControlManager();
-    //     const root = controlManager.createControlTree() as ContainerControl;
-    //     const questionnaireControl = root.children[0] as QuestionnaireControl;
-    //     const touchInput = TestInput.simpleUserEvent(['healthScreen', 'radioClick', 'cough', 1]);
-    //     const responseBuilder = new ControlResponseBuilder(ResponseFactory.init());
-    //     questionnaireControl.renderAct(
-    //         new ActiveAPLInitiativeAct(questionnaireControl),
-    //         touchInput,
-    //         responseBuilder,
-    //     );
-    //     expect(responseBuilder.isDisplayUsed()).true; // display marked as used.
-    // });
+    test('ActiveAPLInitiative causes response.isDisplayUsed = true', async () => {
+        const controlManager = createControlManager({ confirmationRequired: false });
+        const questionnaireControl = controlManager.createControlTree()
+        const touchInput = TestInput.simpleUserEvent(['healthScreen', 'radioClick', 'cough', 1]);
+        const responseBuilder = new ControlResponseBuilder(ResponseFactory.init());
+        questionnaireControl.renderAct(
+            new ActiveAPLInitiativeAct(questionnaireControl),
+            touchInput,
+            responseBuilder,
+        );
+        expect(responseBuilder.isDisplayUsed()).true; // display marked as used.
+    });
 });

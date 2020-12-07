@@ -37,7 +37,7 @@ import { ControlInteractionModelGenerator } from '../../interactionModelGenerati
 import { ModelData } from '../../interactionModelGeneration/ModelTypes';
 import { Logger } from '../../logging/Logger';
 import { ControlResponseBuilder } from '../../responseGeneration/ControlResponseBuilder';
-import { ActiveAPLInitiative as ActiveAPLInitiativeAct } from '../../systemActs/InitiativeActs';
+import { ActiveAPLInitiativeAct as ActiveAPLInitiativeAct } from '../../systemActs/InitiativeActs';
 import { SystemAct } from '../../systemActs/SystemAct';
 import { assert } from '../../utils/AssertionUtils';
 import { StringOrList } from '../../utils/BasicTypes';
@@ -640,37 +640,31 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
     }
 
     standardInputHandlers: ControlInputHandler[] = [
-        // {
-        //     name: 'BareYesToAskedQuestion (builtin)',
-        //     canHandle: this.isBareYesToAskedQuestion,
-        //     handle: this.handleBareYesToAskedQuestion,
-        // },
-        // {
-        //     name: 'BareNoToAskedQuestion (builtin)',
-        //     canHandle: this.isBareNoToAskedQuestion,
-        //     handle: this.handleBareNoToAskedQuestion,
-        // },
         {
-            name: 'StartOrResume (builtin)',
+            name: 'Activate (builtin)',
             canHandle: this.isActivate,
             handle: this.handleActivate,
         },
         {
-            name: 'MappedToAskedQuestion (builtin)',
-            canHandle: this.isBareAnswerToAskedQuestion,
-            handle: this.handleBareAnswerToAskedQuestion,
+            // takes care of built-in Intents that match answer words, e.g. AMAZON.YesIntent/AMAZON.NoIntent
+            name: 'MappedAnswerToAskedQuestion (builtin)',
+            canHandle: this.isMappedAnswerToAskedQuestion,
+            handle: this.handleMappedAnswerToAskedQuestion,
         },
         {
+            // SingleValueControlIntents that provide answer (value slot)
             name: 'SpecificAnswerToAskedQuestion (builtin)',
             canHandle: this.isSpecificAnswerToAskedQuestion,
             handle: this.handleSpecificAnswerToAskedQuestion,
         },
         {
+            // SingleValueControlIntents that mention question (target) and answer (value slot)
             name: 'SpecificAnswerToSpecificQuestion (builtin)',
             canHandle: this.isSpecificAnswerToSpecificQuestion,
             handle: this.handleSpecificAnswerToSpecificQuestion,
         },
         {
+            // SingleValueControlIntents that mention question (target) and answer (feedback slot)
             name: 'FeedbackAnswerToSpecificQuestion (builtin)',
             canHandle: this.isFeedbackAnswerToSpecificQuestion,
             handle: this.handleFeedbackAnswerToSpecificQuestion,
@@ -681,12 +675,12 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
             handle: this.handleSpecificAnswerByTouch,
         },
         {
-            name: 'Explicitly complete by voice (builtin)',
+            name: 'CompletionRequestByVoice (builtin)',
             canHandle: this.isCompletionRequestByVoice,
             handle: this.handleCompletionRequest,
         },
         {
-            name: 'Explicitly complete by touch (builtin)',
+            name: 'CompletionRequestByTouch (builtin)',
             canHandle: this.isCompletionRequestByTouch,
             handle: this.handleCompletionRequest,
         },
@@ -787,7 +781,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         return;
     }
 
-    private isBareAnswerToAskedQuestion(input: ControlInput): any {
+    private isMappedAnswerToAskedQuestion(input: ControlInput): any {
         try {
             const content = this.getQuestionnaireContent(input);
             okIf(InputUtil.isIntent(input));
@@ -804,7 +798,7 @@ export class QuestionnaireControl extends Control implements InteractionModelCon
         }
     }
 
-    private async handleBareAnswerToAskedQuestion(
+    private async handleMappedAnswerToAskedQuestion(
         input: ControlInput,
         resultBuilder: ControlResultBuilder,
     ): Promise<void> {

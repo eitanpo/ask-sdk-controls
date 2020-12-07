@@ -11,8 +11,6 @@
  * permissions and limitations under the License.
  */
 
-//TODO: add new things:controlInputHandler, QuestionnaireControl etc.
-
 export {
     DateControl,
     DateControlActionProps,
@@ -69,6 +67,10 @@ export {
     NumberControlProps,
     NumberControlState,
 } from './commonControls/NumberControl';
+export * from './commonControls/questionnaireControl/QuestionnaireControl';
+export * from './commonControls/questionnaireControl/QuestionnaireControlBuiltIns';
+export * from './commonControls/questionnaireControl/QuestionnaireControlStructs';
+export * from './commonControls/questionnaireControl/QuestionnaireControlSystemActs';
 export {
     ValueControl,
     ValueControlActionProps,
@@ -84,7 +86,14 @@ export {
     ContainerControlProps,
     ContainerControlState,
 } from './controls/ContainerControl';
-export { Control, ControlInputHandlingProps, ControlProps, ControlState } from './controls/Control';
+export {
+    Control,
+    ControlInitiativeHandler,
+    ControlInputHandler,
+    ControlInputHandlingProps,
+    ControlProps,
+    ControlState,
+} from './controls/Control';
 export { ControlInput } from './controls/ControlInput';
 export { ControlManager, ControlManagerProps, renderActsInSequence } from './controls/ControlManager';
 export { ControlResult, ControlResultBuilder } from './controls/ControlResult';
@@ -108,7 +117,7 @@ export {
     implementsInteractionModelContributor,
     InteractionModelContributor,
 } from './controls/mixins/InteractionModelContributor';
-export { StateValidationFunction, ValidationFailure } from './controls/Validation';
+export { evaluateValidationProp, StateValidationFunction, ValidationFailure } from './controls/Validation';
 export { AmazonIntent } from './intents/AmazonBuiltInIntent';
 export { AmazonBuiltInSlotType } from './intents/AmazonBuiltInSlotType';
 export { BaseControlIntent } from './intents/BaseControlIntent';
@@ -170,10 +179,10 @@ export { DeepRequired } from './utils/DeepRequired';
 export { throwIf, throwIfUndefined } from './utils/ErrorUtils';
 export { InputUtil } from './utils/InputUtil';
 export {
+    defaultIntentToValueMapper,
     getMVSSlotResolutions,
     getSlotResolutions,
     IntentBuilder,
-    defaultIntentToValueMapper,
     SimplifiedIntent,
     SimplifiedMVSIntent,
     SlotResolutionValue,
